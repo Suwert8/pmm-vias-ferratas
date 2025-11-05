@@ -1238,9 +1238,13 @@
                 
                 prompt += `. La descripción debe ser informativa, mencionar características principales y tener entre 100-150 palabras.`;
                 
-                // Llamar a la API de Hugging Face
+                // Usar proxy CORS para evitar problemas de origen cruzado
+                const corsProxy = 'https://corsproxy.io/?';
+                const apiUrl = 'https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1';
+                
+                // Llamar a la API de Hugging Face a través del proxy
                 const response = await fetch(
-                    'https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1',
+                    corsProxy + encodeURIComponent(apiUrl),
                     {
                         method: 'POST',
                         headers: {
