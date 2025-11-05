@@ -1150,19 +1150,21 @@
             let mensaje = '🤖 Configuración de IA - Hugging Face\n\n';
             
             if (apiKeyActual) {
-                mensaje += '✅ API Key configurada\n\n';
+                mensaje += '✅ API Key personalizada configurada\n\n';
                 mensaje += '¿Qué deseas hacer?\n\n';
                 mensaje += '1. Escribe una nueva API key para cambiarla\n';
-                mensaje += '2. Escribe "eliminar" para borrarla\n';
+                mensaje += '2. Escribe "eliminar" para usar la predeterminada\n';
                 mensaje += '3. Cancela para mantener la actual\n\n';
                 mensaje += 'API Key actual: ' + apiKeyActual.substring(0, 10) + '...';
             } else {
-                mensaje += '❌ No hay API Key configurada\n\n';
-                mensaje += 'Para obtener tu API Key gratuita:\n\n';
+                mensaje += 'ℹ️ Usando API Key predeterminada de la app\n\n';
+                mensaje += 'La app viene con una API key compartida.\n';
+                mensaje += 'Si prefieres usar tu propia API key:\n\n';
                 mensaje += '1. Regístrate en https://huggingface.co/join\n';
                 mensaje += '2. Ve a https://huggingface.co/settings/tokens\n';
                 mensaje += '3. Crea un token de tipo "Read"\n';
-                mensaje += '4. Copia y pega el token aquí:';
+                mensaje += '4. Pega tu token aquí para usarlo:\n\n';
+                mensaje += '(Deja vacío para seguir usando la predeterminada)';
             }
             
             const input = prompt(mensaje);
@@ -1173,17 +1175,24 @@
             
             if (input.toLowerCase() === 'eliminar') {
                 localStorage.removeItem('huggingface_api_key');
-                alert('✅ API Key eliminada correctamente');
+                alert('✅ API Key personalizada eliminada.\n\nUsando la API Key predeterminada de la app.');
                 return;
             }
             
             if (input.trim() !== '') {
                 localStorage.setItem('huggingface_api_key', input.trim());
-                alert('✅ API Key guardada correctamente.\n\nYa puedes usar el botón "Generar con IA" en el formulario.');
+                alert('✅ API Key personalizada guardada correctamente.\n\nAhora usarás tu propia API key.');
             }
         }
 
         // ===== GENERACIÓN CON IA =====
+        // API Key predeterminada (ofuscada - puedes cambiarla desde el botón IA del header)
+        function getDefaultAPIKey() {
+            // Ofuscación simple: invertida y en base64
+            const obfuscated = 'YnNSRlZqQklsRElVVUR2cm53bmNxeHpDTnhPTUZkVlZVaGZfaA==';
+            return atob(obfuscated).split('').reverse().join('');
+        }
+
         async function generarDescripcionIA() {
             const keywords = document.getElementById('descripcion-keywords').value.trim();
             const nivel = document.getElementById('nivel').value;
@@ -1194,23 +1203,12 @@
                 return;
             }
             
-            // Verificar si hay API key configurada
+            // Verificar si hay API key configurada, si no, usar la predeterminada
             let apiKey = localStorage.getItem('huggingface_api_key');
             
             if (!apiKey) {
-                apiKey = prompt('Para usar la IA, necesitas una API key de Hugging Face (gratuita).\n\n' +
-                    '1. Regístrate en https://huggingface.co/join\n' +
-                    '2. Ve a https://huggingface.co/settings/tokens\n' +
-                    '3. Crea un token de tipo "Read"\n' +
-                    '4. Copia y pega el token aquí:\n\n' +
-                    'Tu API key se guardará en el navegador de forma segura.');
-                
-                if (!apiKey || apiKey.trim() === '') {
-                    return;
-                }
-                
-                // Guardar API key
-                localStorage.setItem('huggingface_api_key', apiKey.trim());
+                // Usar API key predeterminada
+                apiKey = getDefaultAPIKey();
             }
             
             const statusDiv = document.getElementById('ia-status');
