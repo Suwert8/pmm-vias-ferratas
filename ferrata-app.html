@@ -594,6 +594,82 @@
             border-color: var(--secondary-color);
             box-shadow: 0 0 0 3px rgba(151, 201, 61, 0.1);
         }
+
+        .material-required {
+            display: grid;
+            gap: 10px;
+        }
+
+        .material-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .material-item.required {
+            background: #f0f9ff;
+            border-color: var(--primary-color);
+        }
+
+        .material-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+            accent-color: var(--primary-color);
+        }
+
+        .material-item input[type="checkbox"]:disabled {
+            cursor: not-allowed;
+        }
+
+        .material-item label {
+            margin: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .material-item.required label {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .material-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .material-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .material-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .material-tag.required {
+            background: var(--secondary-color);
+            color: var(--dark-bg);
+        }
     </style>
 </head>
 <body>
@@ -627,6 +703,20 @@
                             <option value="k4">K4 - Moderada</option>
                             <option value="k5">K5 - Difícil</option>
                             <option value="k6">K6 - Muy Difícil</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-section">
+                        <label for="filter-material">
+                            <i class="fas fa-toolbox"></i> Filtrar por material:
+                        </label>
+                        <select id="filter-material" class="filter-select">
+                            <option value="todos">Todos</option>
+                            <option value="baga">Con Baga</option>
+                            <option value="polea">Con Polea</option>
+                            <option value="cuerda">Con Cuerda</option>
+                            <option value="ocho">Con Ocho</option>
+                            <option value="otros">Con Otros</option>
                         </select>
                     </div>
 
@@ -681,6 +771,62 @@
                                 <i class="fas fa-align-left"></i> Descripción
                             </label>
                             <textarea id="descripcion" placeholder="Describe la vía ferrata..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-toolbox"></i> Material Necesario
+                            </label>
+                            <div class="material-required">
+                                <div class="material-item required">
+                                    <input type="checkbox" id="mat-casco" checked disabled>
+                                    <label for="mat-casco">
+                                        <i class="fas fa-hard-hat"></i> Casco (Obligatorio)
+                                    </label>
+                                </div>
+                                <div class="material-item required">
+                                    <input type="checkbox" id="mat-disipador" checked disabled>
+                                    <label for="mat-disipador">
+                                        <i class="fas fa-link"></i> Disipador (Obligatorio)
+                                    </label>
+                                </div>
+                                <div class="material-item required">
+                                    <input type="checkbox" id="mat-arnes" checked disabled>
+                                    <label for="mat-arnes">
+                                        <i class="fas fa-vest"></i> Arnés (Obligatorio)
+                                    </label>
+                                </div>
+                                <div class="material-item">
+                                    <input type="checkbox" id="mat-baga">
+                                    <label for="mat-baga">
+                                        <i class="fas fa-link"></i> Baga (Cabo de anclaje)
+                                    </label>
+                                </div>
+                                <div class="material-item">
+                                    <input type="checkbox" id="mat-polea">
+                                    <label for="mat-polea">
+                                        <i class="fas fa-circle-notch"></i> Polea
+                                    </label>
+                                </div>
+                                <div class="material-item">
+                                    <input type="checkbox" id="mat-cuerda">
+                                    <label for="mat-cuerda">
+                                        <i class="fas fa-grip-lines"></i> Cuerda
+                                    </label>
+                                </div>
+                                <div class="material-item">
+                                    <input type="checkbox" id="mat-ocho">
+                                    <label for="mat-ocho">
+                                        <i class="fas fa-infinity"></i> Ocho (Descensor)
+                                    </label>
+                                </div>
+                                <div class="material-item">
+                                    <input type="checkbox" id="mat-otros">
+                                    <label for="mat-otros">
+                                        <i class="fas fa-plus"></i> Otros
+                                    </label>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -775,6 +921,7 @@
         let mediaFiles = [];
         let selectingOnMap = false;
         let currentFilter = 'todas';
+        let currentMaterialFilter = 'todos';
 
         // ===== INICIALIZACIÓN =====
         document.addEventListener('DOMContentLoaded', function() {
@@ -933,6 +1080,11 @@
                 loadFerratas();
             });
 
+            document.getElementById('filter-material').addEventListener('change', function() {
+                currentMaterialFilter = this.value;
+                loadFerratas();
+            });
+
             // Modal
             document.getElementById('close-modal').addEventListener('click', closeModal);
             document.getElementById('detail-modal').addEventListener('click', function(e) {
@@ -1007,6 +1159,18 @@
                 return;
             }
 
+            // Recoger material necesario
+            const material = {
+                casco: true, // siempre obligatorio
+                disipador: true, // siempre obligatorio
+                arnes: true, // siempre obligatorio
+                baga: document.getElementById('mat-baga').checked,
+                polea: document.getElementById('mat-polea').checked,
+                cuerda: document.getElementById('mat-cuerda').checked,
+                ocho: document.getElementById('mat-ocho').checked,
+                otros: document.getElementById('mat-otros').checked
+            };
+
             const ferrata = {
                 id: Date.now(),
                 nombre: document.getElementById('nombre').value,
@@ -1016,6 +1180,7 @@
                 lng: selectedCoords.lng,
                 coverImage: coverImageData,
                 media: mediaFiles,
+                material: material,
                 fecha: new Date().toISOString()
             };
 
@@ -1065,6 +1230,17 @@
             document.getElementById('cover-preview').innerHTML = '';
             document.getElementById('media-preview').innerHTML = '';
             document.getElementById('coords-display').style.display = 'none';
+            
+            // Restablecer checkboxes de material (los obligatorios siempre checked)
+            document.getElementById('mat-casco').checked = true;
+            document.getElementById('mat-disipador').checked = true;
+            document.getElementById('mat-arnes').checked = true;
+            document.getElementById('mat-baga').checked = false;
+            document.getElementById('mat-polea').checked = false;
+            document.getElementById('mat-cuerda').checked = false;
+            document.getElementById('mat-ocho').checked = false;
+            document.getElementById('mat-otros').checked = false;
+            
             if (marker) {
                 map.removeLayer(marker);
                 marker = null;
@@ -1077,22 +1253,35 @@
             const container = document.getElementById('ferratas-list');
 
             let filtered = ferratas;
+            
+            // Filtrar por nivel
             if (currentFilter !== 'todas') {
-                filtered = ferratas.filter(f => f.nivel === currentFilter);
+                filtered = filtered.filter(f => f.nivel === currentFilter);
+            }
+            
+            // Filtrar por material
+            if (currentMaterialFilter !== 'todos') {
+                filtered = filtered.filter(f => {
+                    if (!f.material) return false;
+                    return f.material[currentMaterialFilter] === true;
+                });
             }
 
             if (filtered.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-mountain"></i>
-                        <h3>No hay vías ferratas guardadas</h3>
-                        <p>Añade tu primera vía ferrata usando el formulario</p>
+                        <h3>No hay vías ferratas</h3>
+                        <p>No se encontraron vías con estos filtros</p>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = filtered.map(ferrata => `
+            container.innerHTML = filtered.map(ferrata => {
+                const materialTags = getMaterialTags(ferrata.material);
+                
+                return `
                 <div class="ferrata-card" onclick="showFerrataDetail(${ferrata.id})">
                     <div class="ferrata-header">
                         ${ferrata.coverImage 
@@ -1110,17 +1299,18 @@
                             <span><i class="fas fa-images"></i> ${ferrata.media.length}</span>
                         </div>
                         ${ferrata.descripcion ? `<p style="color: var(--text-light); margin-top: 10px;">${ferrata.descripcion.substring(0, 100)}${ferrata.descripcion.length > 100 ? '...' : ''}</p>` : ''}
+                        ${materialTags ? `<div class="material-tags">${materialTags}</div>` : ''}
                         <div class="ferrata-actions">
                             <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); showOnMap(${ferrata.lat}, ${ferrata.lng})">
                                 <i class="fas fa-map"></i> Ver en Mapa
                             </button>
-                            <button class="btn btn-accent btn-small" onclick="event.stopPropagation(); deleteFerrataconfirmDelete(${ferrata.id})">
+                            <button class="btn btn-accent btn-small" onclick="event.stopPropagation(); confirmDelete(${ferrata.id})">
                                 <i class="fas fa-trash"></i> Eliminar
                             </button>
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function showFerrataDetail(id) {
@@ -1156,6 +1346,14 @@
                     <strong><i class="fas fa-calendar"></i> Fecha:</strong> 
                     ${new Date(ferrata.fecha).toLocaleDateString('es-ES')}
                 </div>
+                ${ferrata.material ? `
+                    <div style="margin-bottom: 20px;">
+                        <strong><i class="fas fa-toolbox"></i> Material Necesario:</strong>
+                        <div class="material-tags" style="margin-top: 10px;">
+                            ${getMaterialTags(ferrata.material)}
+                        </div>
+                    </div>
+                ` : ''}
                 ${ferrata.descripcion ? `
                     <div style="margin-bottom: 20px;">
                         <strong><i class="fas fa-align-left"></i> Descripción:</strong>
@@ -1239,6 +1437,36 @@
                 'k6': 'K6 - Muy Difícil'
             };
             return niveles[nivel] || nivel;
+        }
+
+        function getMaterialTags(material) {
+            if (!material) return '';
+            
+            const tags = [];
+            const materialNames = {
+                'casco': '<i class="fas fa-hard-hat"></i> Casco',
+                'disipador': '<i class="fas fa-link"></i> Disipador',
+                'arnes': '<i class="fas fa-vest"></i> Arnés',
+                'baga': '<i class="fas fa-link"></i> Baga',
+                'polea': '<i class="fas fa-circle-notch"></i> Polea',
+                'cuerda': '<i class="fas fa-grip-lines"></i> Cuerda',
+                'ocho': '<i class="fas fa-infinity"></i> Ocho',
+                'otros': '<i class="fas fa-plus"></i> Otros'
+            };
+            
+            // Los obligatorios siempre están
+            if (material.casco) tags.push(`<span class="material-tag required">${materialNames.casco}</span>`);
+            if (material.disipador) tags.push(`<span class="material-tag required">${materialNames.disipador}</span>`);
+            if (material.arnes) tags.push(`<span class="material-tag required">${materialNames.arnes}</span>`);
+            
+            // Los opcionales solo si están marcados
+            if (material.baga) tags.push(`<span class="material-tag">${materialNames.baga}</span>`);
+            if (material.polea) tags.push(`<span class="material-tag">${materialNames.polea}</span>`);
+            if (material.cuerda) tags.push(`<span class="material-tag">${materialNames.cuerda}</span>`);
+            if (material.ocho) tags.push(`<span class="material-tag">${materialNames.ocho}</span>`);
+            if (material.otros) tags.push(`<span class="material-tag">${materialNames.otros}</span>`);
+            
+            return tags.join('');
         }
     </script>
 </body>
