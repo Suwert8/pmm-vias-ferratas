@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#2c5f2d">
@@ -680,14 +681,6 @@
                 Vías Ferratas
             </h1>
             <p>Tu guía personal</p>
-            <button 
-                class="btn btn-secondary" 
-                id="config-ia-btn" 
-                style="position: absolute; top: 15px; right: 15px; padding: 8px 12px; font-size: 0.9em;"
-                title="Configurar API Key de IA"
-            >
-                <i class="fas fa-key"></i> IA
-            </button>
         </header>
 
         <div class="main-content">
@@ -791,7 +784,7 @@
                                     id="generar-ia-btn"
                                     style="white-space: nowrap;"
                                 >
-                                    <i class="fas fa-magic"></i> Generar con IA
+                                    <i class="fas fa-magic"></i> Auto-generar
                                 </button>
                             </div>
                             <textarea id="descripcion" placeholder="La descripción generada aparecerá aquí..."></textarea>
@@ -1138,61 +1131,9 @@
 
             // Generar descripción con IA
             document.getElementById('generar-ia-btn').addEventListener('click', generarDescripcionIA);
-            
-            // Configurar API key de IA
-            document.getElementById('config-ia-btn').addEventListener('click', configurarAPIKey);
-        }
-
-        // ===== CONFIGURACIÓN API KEY =====
-        function configurarAPIKey() {
-            const apiKeyActual = localStorage.getItem('huggingface_api_key');
-            
-            let mensaje = '🤖 Configuración de IA - Hugging Face\n\n';
-            
-            if (apiKeyActual) {
-                mensaje += '✅ API Key personalizada configurada\n\n';
-                mensaje += '¿Qué deseas hacer?\n\n';
-                mensaje += '1. Escribe una nueva API key para cambiarla\n';
-                mensaje += '2. Escribe "eliminar" para usar la predeterminada\n';
-                mensaje += '3. Cancela para mantener la actual\n\n';
-                mensaje += 'API Key actual: ' + apiKeyActual.substring(0, 10) + '...';
-            } else {
-                mensaje += 'ℹ️ Usando API Key predeterminada de la app\n\n';
-                mensaje += 'La app viene con una API key compartida.\n';
-                mensaje += 'Si prefieres usar tu propia API key:\n\n';
-                mensaje += '1. Regístrate en https://huggingface.co/join\n';
-                mensaje += '2. Ve a https://huggingface.co/settings/tokens\n';
-                mensaje += '3. Crea un token de tipo "Read"\n';
-                mensaje += '4. Pega tu token aquí para usarlo:\n\n';
-                mensaje += '(Deja vacío para seguir usando la predeterminada)';
-            }
-            
-            const input = prompt(mensaje);
-            
-            if (input === null) {
-                return; // Usuario canceló
-            }
-            
-            if (input.toLowerCase() === 'eliminar') {
-                localStorage.removeItem('huggingface_api_key');
-                alert('✅ API Key personalizada eliminada.\n\nUsando la API Key predeterminada de la app.');
-                return;
-            }
-            
-            if (input.trim() !== '') {
-                localStorage.setItem('huggingface_api_key', input.trim());
-                alert('✅ API Key personalizada guardada correctamente.\n\nAhora usarás tu propia API key.');
-            }
         }
 
         // ===== GENERACIÓN CON IA =====
-        // API Key predeterminada (ofuscada - puedes cambiarla desde el botón IA del header)
-        function getDefaultAPIKey() {
-            // Ofuscación simple: invertida y en base64
-            const obfuscated = 'YnNSRlZqQklsRElVVUR2cm53bmNxeHpDTnhPTUZkVlZVaGZfaA==';
-            return atob(obfuscated).split('').reverse().join('');
-        }
-
         async function generarDescripcionIA() {
             const keywords = document.getElementById('descripcion-keywords').value.trim();
             const nivel = document.getElementById('nivel').value;
@@ -1201,14 +1142,6 @@
             if (!keywords && !nombre) {
                 alert('Por favor, escribe algunas palabras clave o el nombre de la vía ferrata');
                 return;
-            }
-            
-            // Verificar si hay API key configurada, si no, usar la predeterminada
-            let apiKey = localStorage.getItem('huggingface_api_key');
-            
-            if (!apiKey) {
-                // Usar API key predeterminada
-                apiKey = getDefaultAPIKey();
             }
             
             const statusDiv = document.getElementById('ia-status');
@@ -1220,85 +1153,18 @@
             btnGenerar.disabled = true;
             
             try {
-                // Crear el prompt basado en la información disponible
-                const nivelTexto = getNivelText(nivel);
-                let prompt = `Escribe una descripción atractiva y detallada en español para una vía ferrata`;
+                // Generar descripción usando plantillas inteligentes
+                const descripcionGenerada = generarDescripcionInteligente(nombre, nivel, keywords);
                 
-                if (nombre) {
-                    prompt += ` llamada "${nombre}"`;
-                }
+                // Actualizar el textarea
+                descripcionTextarea.value = descripcionGenerada;
                 
-                if (nivel) {
-                    prompt += ` de nivel ${nivelTexto}`;
-                }
+                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ¡Descripción generada! Puedes editarla si lo deseas.';
+                statusDiv.style.color = 'var(--primary-color)';
                 
-                if (keywords) {
-                    prompt += ` que incluye: ${keywords}`;
-                }
-                
-                prompt += `. La descripción debe ser informativa, mencionar características principales y tener entre 100-150 palabras.`;
-                
-                // Usar proxy CORS para evitar problemas de origen cruzado
-                const corsProxy = 'https://corsproxy.io/?';
-                const apiUrl = 'https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1';
-                
-                // Llamar a la API de Hugging Face a través del proxy
-                const response = await fetch(
-                    corsProxy + encodeURIComponent(apiUrl),
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${apiKey}`
-                        },
-                        body: JSON.stringify({
-                            inputs: prompt,
-                            parameters: {
-                                max_new_tokens: 200,
-                                temperature: 0.7,
-                                top_p: 0.95,
-                                return_full_text: false
-                            }
-                        })
-                    }
-                );
-                
-                if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        // API key inválida
-                        localStorage.removeItem('huggingface_api_key');
-                        throw new Error('API key inválida. Por favor, verifica tu token.');
-                    }
-                    throw new Error('Error al conectar con el servicio de IA');
-                }
-                
-                const data = await response.json();
-                
-                if (data.error) {
-                    if (data.error.includes('loading')) {
-                        throw new Error('El modelo se está cargando. Intenta de nuevo en 20 segundos.');
-                    }
-                    throw new Error(data.error);
-                }
-                
-                if (data && data[0] && data[0].generated_text) {
-                    let descripcionGenerada = data[0].generated_text.trim();
-                    
-                    // Limpiar la descripción (eliminar el prompt si viene incluido)
-                    descripcionGenerada = descripcionGenerada.replace(prompt, '').trim();
-                    
-                    // Actualizar el textarea
-                    descripcionTextarea.value = descripcionGenerada;
-                    
-                    statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ¡Descripción generada! Puedes editarla si lo deseas.';
-                    statusDiv.style.color = 'var(--primary-color)';
-                    
-                    setTimeout(() => {
-                        statusDiv.style.display = 'none';
-                    }, 3000);
-                } else {
-                    throw new Error('No se pudo generar la descripción');
-                }
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 3000);
                 
             } catch (error) {
                 console.error('Error generando descripción:', error);
@@ -1311,6 +1177,117 @@
             } finally {
                 btnGenerar.disabled = false;
             }
+        }
+
+        function generarDescripcionInteligente(nombre, nivel, keywords) {
+            // Plantillas base según nivel de dificultad
+            const plantillasPorNivel = {
+                'k1': [
+                    'Una vía ferrata perfecta para iniciarse en esta emocionante actividad',
+                    'Recorrido muy accesible ideal para familias y principiantes',
+                    'Excelente opción para quienes buscan una primera experiencia en vía ferrata'
+                ],
+                'k2': [
+                    'Vía ferrata de dificultad baja, adecuada para personas con poca experiencia',
+                    'Recorrido asequible que combina diversión y seguridad',
+                    'Perfecta para adentrarse en el mundo de las vías ferratas'
+                ],
+                'k3': [
+                    'Vía ferrata de dificultad media que ofrece un reto moderado',
+                    'Recorrido equilibrado que combina técnica y disfrute del paisaje',
+                    'Experiencia gratificante para aventureros con algo de experiencia'
+                ],
+                'k4': [
+                    'Vía ferrata de nivel moderado-alto que requiere buena forma física',
+                    'Recorrido técnico con tramos desafiantes y vistas impresionantes',
+                    'Aventura emocionante para montañeros con experiencia previa'
+                ],
+                'k5': [
+                    'Vía ferrata difícil que pone a prueba tus habilidades y resistencia',
+                    'Recorrido exigente con tramos verticales y técnicos',
+                    'Desafío considerable para aventureros experimentados'
+                ],
+                'k6': [
+                    'Vía ferrata de máxima dificultad solo para expertos',
+                    'Recorrido extremadamente exigente con tramos muy técnicos',
+                    'El reto definitivo para los más experimentados en vías ferratas'
+                ]
+            };
+            
+            // Elementos descriptivos según palabras clave
+            const elementosDescriptivos = {
+                'puente': 'con emocionantes puentes colgantes',
+                'colgante': 'atravesando espectaculares puentes suspendidos',
+                'tirolina': 'que incluye adrenalínicas tirolinas',
+                'zip': 'con divertidas tirolinas',
+                'cascada': 'junto a impresionantes cascadas',
+                'río': 'siguiendo el curso del río',
+                'desfiladero': 'por un espectacular desfiladero',
+                'garganta': 'adentrándose en una impresionante garganta',
+                'vertical': 'con tramos verticales desafiantes',
+                'pared': 'escalando paredes rocosas',
+                'cueva': 'explorando formaciones y cuevas',
+                'lago': 'con vistas panorámicas al lago',
+                'mar': 'con impresionantes vistas al mar',
+                'montaña': 'entre majestuosas montañas',
+                'bosque': 'atravesando frondosos bosques',
+                'escalera': 'equipada con escaleras metálicas',
+                'grapa': 'con numerosos agarres y grapas',
+                'cable': 'siguiendo el cable de vida',
+                'rapel': 'que incluye descenso en rápel',
+                'trepa': 'con secciones de trepa técnica'
+            };
+            
+            // Seleccionar plantilla base
+            const nivelKey = nivel || 'k3';
+            const plantillas = plantillasPorNivel[nivelKey] || plantillasPorNivel['k3'];
+            const plantillaBase = plantillas[Math.floor(Math.random() * plantillas.length)];
+            
+            // Construir descripción
+            let descripcion = '';
+            
+            if (nombre) {
+                descripcion = `La ${nombre} es una `;
+            } else {
+                descripcion = 'Esta es una ';
+            }
+            
+            descripcion += plantillaBase.toLowerCase();
+            
+            // Agregar elementos según palabras clave
+            if (keywords) {
+                const keywordsArray = keywords.toLowerCase().split(/[,;]+/).map(k => k.trim());
+                const elementosEncontrados = [];
+                
+                keywordsArray.forEach(keyword => {
+                    for (const [clave, descripcionElemento] of Object.entries(elementosDescriptivos)) {
+                        if (keyword.includes(clave)) {
+                            elementosEncontrados.push(descripcionElemento);
+                            break;
+                        }
+                    }
+                });
+                
+                if (elementosEncontrados.length > 0) {
+                    descripcion += ' ' + elementosEncontrados.join(', ');
+                }
+            }
+            
+            // Agregar cierre descriptivo
+            const cierres = [
+                '. El recorrido ofrece una experiencia memorable en contacto con la naturaleza.',
+                '. Durante el trayecto podrás disfrutar de paisajes espectaculares y momentos únicos.',
+                '. Una aventura que combina deporte, naturaleza y paisajes increíbles.',
+                '. El entorno natural y las vistas panorámicas hacen de esta experiencia algo inolvidable.',
+                '. Equipada con material de seguridad moderno para garantizar una experiencia segura y divertida.'
+            ];
+            
+            descripcion += cierres[Math.floor(Math.random() * cierres.length)];
+            
+            // Capitalizar primera letra
+            descripcion = descripcion.charAt(0).toUpperCase() + descripcion.slice(1);
+            
+            return descripcion;
         }
 
         // ===== MANEJO DE ARCHIVOS =====
