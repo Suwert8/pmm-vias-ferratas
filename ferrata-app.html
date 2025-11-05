@@ -826,6 +826,9 @@
                                         <i class="fas fa-plus"></i> Otros
                                     </label>
                                 </div>
+                                <div id="otros-text-container" style="display: none; margin-top: 10px;">
+                                    <input type="text" id="mat-otros-text" placeholder="Especifica qué otros materiales necesitas...">
+                                </div>
                             </div>
                         </div>
 
@@ -1090,6 +1093,20 @@
             document.getElementById('detail-modal').addEventListener('click', function(e) {
                 if (e.target === this) closeModal();
             });
+
+            // Checkbox "Otros" - mostrar/ocultar textbox
+            document.getElementById('mat-otros').addEventListener('change', function() {
+                const otrosContainer = document.getElementById('otros-text-container');
+                const otrosText = document.getElementById('mat-otros-text');
+                
+                if (this.checked) {
+                    otrosContainer.style.display = 'block';
+                    otrosText.focus();
+                } else {
+                    otrosContainer.style.display = 'none';
+                    otrosText.value = '';
+                }
+            });
         }
 
         // ===== MANEJO DE ARCHIVOS =====
@@ -1168,7 +1185,8 @@
                 polea: document.getElementById('mat-polea').checked,
                 cuerda: document.getElementById('mat-cuerda').checked,
                 ocho: document.getElementById('mat-ocho').checked,
-                otros: document.getElementById('mat-otros').checked
+                otros: document.getElementById('mat-otros').checked,
+                otrosTexto: document.getElementById('mat-otros').checked ? document.getElementById('mat-otros-text').value : ''
             };
 
             const ferrata = {
@@ -1240,6 +1258,8 @@
             document.getElementById('mat-cuerda').checked = false;
             document.getElementById('mat-ocho').checked = false;
             document.getElementById('mat-otros').checked = false;
+            document.getElementById('mat-otros-text').value = '';
+            document.getElementById('otros-text-container').style.display = 'none';
             
             if (marker) {
                 map.removeLayer(marker);
@@ -1450,8 +1470,7 @@
                 'baga': '<i class="fas fa-link"></i> Baga',
                 'polea': '<i class="fas fa-circle-notch"></i> Polea',
                 'cuerda': '<i class="fas fa-grip-lines"></i> Cuerda',
-                'ocho': '<i class="fas fa-infinity"></i> Ocho',
-                'otros': '<i class="fas fa-plus"></i> Otros'
+                'ocho': '<i class="fas fa-infinity"></i> Ocho'
             };
             
             // Los obligatorios siempre están
@@ -1464,7 +1483,10 @@
             if (material.polea) tags.push(`<span class="material-tag">${materialNames.polea}</span>`);
             if (material.cuerda) tags.push(`<span class="material-tag">${materialNames.cuerda}</span>`);
             if (material.ocho) tags.push(`<span class="material-tag">${materialNames.ocho}</span>`);
-            if (material.otros) tags.push(`<span class="material-tag">${materialNames.otros}</span>`);
+            if (material.otros) {
+                const otrosText = material.otrosTexto ? `: ${material.otrosTexto}` : '';
+                tags.push(`<span class="material-tag"><i class="fas fa-plus"></i> Otros${otrosText}</span>`);
+            }
             
             return tags.join('');
         }
