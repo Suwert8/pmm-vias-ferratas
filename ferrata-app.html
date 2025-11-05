@@ -738,7 +738,7 @@
             <!-- Vista: Añadir Ferrata -->
             <div id="view-add" class="view">
                 <div class="section">
-                    <h2>
+                    <h2 id="form-title">
                         <i class="fas fa-plus-circle"></i>
                         Nueva Vía Ferrata
                     </h2>
@@ -997,6 +997,7 @@
         let selectingOnMap = false;
         let currentFilter = 'todas';
         let currentMaterialFilter = 'todos';
+        let editingFerrataId = null;
 
         // ===== INICIALIZACIÓN =====
         document.addEventListener('DOMContentLoaded', function() {
@@ -1429,39 +1430,59 @@
                 otrosTexto: document.getElementById('mat-otros').checked ? document.getElementById('mat-otros-text').value : ''
             };
 
-            const ferrata = {
-                id: Date.now(),
-                nombre: document.getElementById('nombre').value,
-                nivel: document.getElementById('nivel').value,
-                descripcion: document.getElementById('descripcion').value,
-                lat: selectedCoords.lat,
-                lng: selectedCoords.lng,
-                coverImage: coverImageData,
-                media: mediaFiles,
-                material: material,
-                fecha: new Date().toISOString()
-            };
+            if (editingFerrataId) {
+                // Modo edición: actualizar ferrata existente
+                const ferratas = getFerratas();
+                const index = ferratas.findIndex(f => f.id === editingFerrataId);
+                
+                if (index !== -1) {
+                    const fechaOriginal = ferratas[index].fecha;
+                    ferratas[index] = {
+                        id: editingFerrataId,
+                        nombre: document.getElementById('nombre').value,
+                        nivel: document.getElementById('nivel').value,
+                        descripcion: document.getElementById('descripcion').value,
+                        lat: selectedCoords.lat,
+                        lng: selectedCoords.lng,
+                        coverImage: coverImageData,
+                        media: mediaFiles,
+                        material: material,
+                        fecha: fechaOriginal // mantener fecha original
+                    };
+                    
+                    localStorage.setItem('ferratas', JSON.stringify(ferratas));
+                    alert('¡Vía Ferrata actualizada exitosamente!');
+                }
+            } else {
+                // Modo creación: nueva ferrata
+                const ferrata = {
+                    id: Date.now(),
+                    nombre: document.getElementById('nombre').value,
+                    nivel: document.getElementById('nivel').value,
+                    descripcion: document.getElementById('descripcion').value,
+                    lat: selectedCoords.lat,
+                    lng: selectedCoords.lng,
+                    coverImage: coverImageData,
+                    media: mediaFiles,
+                    material: material,
+                    fecha: new Date().toISOString()
+                };
 
-            saveFerrataToStorage(ferrata);
+                saveFerrataToStorage(ferrata);
+                alert('¡Vía Ferrata guardada exitosamente!');
+            }
+
             resetForm();
             loadFerratas();
             
-            // Añadir marcador al mapa
-            const newMarker = L.marker([ferrata.lat, ferrata.lng])
-                .addTo(map)
-                .bindPopup(`<b>${ferrata.nombre}</b><br>Nivel: ${getNivelText(ferrata.nivel)}`);
-            
-            newMarker.on('click', function() {
-                showFerrataDetail(ferrata.id);
-            });
+            // Recargar marcadores del mapa
+            reloadMapMarkers();
 
             // Volver a la vista de lista
             document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
             document.querySelector('[data-view="list"]').classList.add('active');
             document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
             document.getElementById('view-list').classList.add('active');
-
-            alert('¡Vía Ferrata guardada exitosamente!');
         }
 
         function saveFerrataToStorage(ferrata) {
@@ -1485,9 +1506,16 @@
             selectedCoords = null;
             coverImageData = null;
             mediaFiles = [];
+            editingFerrataId = null;
             document.getElementById('cover-preview').innerHTML = '';
             document.getElementById('media-preview').innerHTML = '';
             document.getElementById('coords-display').style.display = 'none';
+            
+            // Restablecer título del formulario
+            document.getElementById('form-title').innerHTML = `
+                <i class="fas fa-plus-circle"></i>
+                Nueva Vía Ferrata
+            `;
             
             // Restablecer checkboxes de material (los obligatorios siempre checked)
             document.getElementById('mat-casco').checked = true;
@@ -1505,6 +1533,106 @@
                 map.removeLayer(marker);
                 marker = null;
             }
+        }
+
+        function editFerrata(id) {
+            const ferratas = getFerratas();
+            const ferrata = ferratas.find(f => f.id === id);
+            
+            if (!ferrata) {
+                alert('No se encontró la vía ferrata');
+                return;
+            }
+            
+            // Establecer modo edición
+            editingFerrataId = id;
+            
+            // Cambiar título del formulario
+            document.getElementById('form-title').innerHTML = `
+                <i class="fas fa-edit"></i>
+                Editando Vía Ferrata
+            `;
+            
+            // Rellenar el formulario con los datos existentes
+            document.getElementById('nombre').value = ferrata.nombre;
+            document.getElementById('nivel').value = ferrata.nivel;
+            document.getElementById('descripcion').value = ferrata.descripcion || '';
+            
+            // Establecer coordenadas
+            selectedCoords = { lat: ferrata.lat, lng: ferrata.lng };
+            document.getElementById('coords-display').style.display = 'block';
+            document.getElementById('coords-display').innerHTML = `
+                <i class="fas fa-map-marker-alt"></i>
+                Ubicación: ${ferrata.lat.toFixed(6)}, ${ferrata.lng.toFixed(6)}
+            `;
+            
+            // Agregar marcador en el mapa
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            marker = L.marker([ferrata.lat, ferrata.lng]).addTo(map);
+            map.setView([ferrata.lat, ferrata.lng], 13);
+            
+            // Imagen de portada
+            if (ferrata.coverImage) {
+                coverImageData = ferrata.coverImage;
+                document.getElementById('cover-preview').innerHTML = `
+                    <div class="preview-image">
+                        <img src="${ferrata.coverImage}" alt="Portada">
+                        <button type="button" class="remove-btn" onclick="removeCoverImage()">×</button>
+                    </div>
+                `;
+            }
+            
+            // Media files
+            if (ferrata.media && ferrata.media.length > 0) {
+                mediaFiles = [...ferrata.media];
+                updateMediaPreview();
+            }
+            
+            // Material
+            if (ferrata.material) {
+                document.getElementById('mat-baga').checked = ferrata.material.baga || false;
+                document.getElementById('mat-polea').checked = ferrata.material.polea || false;
+                document.getElementById('mat-cuerda').checked = ferrata.material.cuerda || false;
+                document.getElementById('mat-ocho').checked = ferrata.material.ocho || false;
+                document.getElementById('mat-otros').checked = ferrata.material.otros || false;
+                
+                if (ferrata.material.otros && ferrata.material.otrosTexto) {
+                    document.getElementById('mat-otros-text').value = ferrata.material.otrosTexto;
+                    document.getElementById('otros-text-container').style.display = 'block';
+                }
+            }
+            
+            // Cambiar a la vista de añadir
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            document.querySelector('[data-view="add"]').classList.add('active');
+            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+            document.getElementById('view-add').classList.add('active');
+            
+            // Hacer scroll al inicio del formulario
+            window.scrollTo(0, 0);
+        }
+
+        function reloadMapMarkers() {
+            // Limpiar marcadores existentes (excepto el marcador temporal)
+            map.eachLayer(function(layer) {
+                if (layer instanceof L.Marker && layer !== marker) {
+                    map.removeLayer(layer);
+                }
+            });
+            
+            // Agregar todos los marcadores nuevamente
+            const ferratas = getFerratas();
+            ferratas.forEach(ferrata => {
+                const newMarker = L.marker([ferrata.lat, ferrata.lng])
+                    .addTo(map)
+                    .bindPopup(`<b>${ferrata.nombre}</b><br>Nivel: ${getNivelText(ferrata.nivel)}`);
+                
+                newMarker.on('click', function() {
+                    showFerrataDetail(ferrata.id);
+                });
+            });
         }
 
         // ===== VISUALIZACIÓN =====
@@ -1563,6 +1691,9 @@
                         <div class="ferrata-actions">
                             <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); showOnMap(${ferrata.lat}, ${ferrata.lng})">
                                 <i class="fas fa-map"></i> Ver en Mapa
+                            </button>
+                            <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); editFerrata(${ferrata.id})">
+                                <i class="fas fa-edit"></i> Editar
                             </button>
                             <button class="btn btn-accent btn-small" onclick="event.stopPropagation(); confirmDelete(${ferrata.id})">
                                 <i class="fas fa-trash"></i> Eliminar
