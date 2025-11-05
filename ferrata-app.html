@@ -880,74 +880,6 @@
                     </form>
                 </div>
             </div>
-
-            <!-- Vista: Backup/Exportar -->
-            <div id="view-backup" class="view">
-                <div class="section">
-                    <h2>
-                        <i class="fas fa-database"></i>
-                        Backup y Sincronización
-                    </h2>
-
-                    <div style="margin-bottom: 30px;">
-                        <h3 style="color: var(--primary-color); margin-bottom: 15px;">
-                            <i class="fas fa-download"></i> Exportar Datos
-                        </h3>
-                        <p style="color: var(--text-light); margin-bottom: 15px;">
-                            Descarga todas tus vías ferratas en un archivo JSON. Úsalo como backup o para transferir a otro dispositivo.
-                        </p>
-                        <button class="btn btn-primary" id="export-btn" style="width: 100%;">
-                            <i class="fas fa-file-download"></i>
-                            Exportar Todas las Ferratas
-                        </button>
-                        <div id="export-info" style="margin-top: 10px; padding: 10px; background: #e8f5e9; border-radius: 8px; display: none;">
-                            <p style="margin: 0; color: var(--primary-color); font-size: 0.9em;">
-                                <i class="fas fa-info-circle"></i> <span id="export-count"></span>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div style="margin-bottom: 30px;">
-                        <h3 style="color: var(--primary-color); margin-bottom: 15px;">
-                            <i class="fas fa-upload"></i> Importar Datos
-                        </h3>
-                        <p style="color: var(--text-light); margin-bottom: 15px;">
-                            Restaura tus vías ferratas desde un archivo JSON exportado previamente.
-                        </p>
-                        <div class="file-upload" id="import-upload">
-                            <i class="fas fa-file-upload" style="font-size: 2em; color: var(--secondary-color);"></i>
-                            <p>Click para seleccionar archivo JSON</p>
-                            <input type="file" id="import-file" accept=".json,application/json">
-                        </div>
-                        <div id="import-info" style="margin-top: 10px; padding: 10px; border-radius: 8px; display: none;">
-                            <p style="margin: 0; font-size: 0.9em;">
-                                <i class="fas fa-info-circle"></i> <span id="import-message"></span>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div style="padding: 20px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
-                        <h4 style="color: #856404; margin-bottom: 10px;">
-                            <i class="fas fa-exclamation-triangle"></i> Importante
-                        </h4>
-                        <ul style="margin: 0; padding-left: 20px; color: #856404; font-size: 0.9em;">
-                            <li>Exporta tus datos regularmente como backup</li>
-                            <li>Importar reemplazará todos los datos actuales</li>
-                            <li>El archivo JSON contiene todas tus fotos y videos</li>
-                            <li>Puedes guardar el JSON en Drive, Dropbox, etc.</li>
-                        </ul>
-                    </div>
-
-                    <div style="margin-top: 30px;">
-                        <h3 style="color: var(--text-dark); margin-bottom: 15px;">
-                            <i class="fas fa-chart-bar"></i> Estadísticas
-                        </h3>
-                        <div id="stats-container" style="display: grid; gap: 10px;">
-                            <!-- Las estadísticas se cargarán dinámicamente -->
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Navegación inferior móvil -->
@@ -963,10 +895,6 @@
             <button class="nav-item" data-view="add">
                 <i class="fas fa-plus-circle"></i>
                 <span>Añadir</span>
-            </button>
-            <button class="nav-item" data-view="backup">
-                <i class="fas fa-download"></i>
-                <span>Backup</span>
             </button>
         </nav>
     </div>
@@ -1030,164 +958,8 @@
                             map.invalidateSize();
                         }, 100);
                     }
-                    
-                    // Si cambiamos a backup, actualizar estadísticas
-                    if (viewName === 'backup') {
-                        updateStats();
-                    }
                 });
             });
-        }
-
-        // ===== EXPORTAR/IMPORTAR =====
-        function exportData() {
-            const ferratas = getFerratas();
-            
-            if (ferratas.length === 0) {
-                alert('No hay vías ferratas para exportar');
-                return;
-            }
-            
-            // Crear el JSON
-            const dataStr = JSON.stringify(ferratas, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            
-            // Crear enlace de descarga
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            const fecha = new Date().toISOString().split('T')[0];
-            a.download = `vias-ferratas-backup-${fecha}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            // Mostrar confirmación
-            const info = document.getElementById('export-info');
-            const count = document.getElementById('export-count');
-            count.textContent = `✅ ${ferratas.length} vía${ferratas.length > 1 ? 's' : ''} ferrata${ferratas.length > 1 ? 's' : ''} exportada${ferratas.length > 1 ? 's' : ''} correctamente`;
-            info.style.display = 'block';
-            
-            setTimeout(() => {
-                info.style.display = 'none';
-            }, 5000);
-        }
-
-        function importData(file) {
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    
-                    // Validar que sea un array
-                    if (!Array.isArray(data)) {
-                        throw new Error('Formato de archivo inválido');
-                    }
-                    
-                    // Confirmar antes de sobrescribir
-                    const currentFerratas = getFerratas();
-                    let message = `¿Importar ${data.length} vía${data.length > 1 ? 's' : ''} ferrata${data.length > 1 ? 's' : ''}?`;
-                    
-                    if (currentFerratas.length > 0) {
-                        message += `\n\n⚠️ ATENCIÓN: Esto reemplazará tus ${currentFerratas.length} vía${currentFerratas.length > 1 ? 's' : ''} ferrata${currentFerratas.length > 1 ? 's' : ''} actual${currentFerratas.length > 1 ? 'es' : ''}.`;
-                    }
-                    
-                    if (confirm(message)) {
-                        localStorage.setItem('ferratas', JSON.stringify(data));
-                        
-                        // Mostrar mensaje de éxito
-                        const info = document.getElementById('import-info');
-                        const message = document.getElementById('import-message');
-                        message.textContent = `✅ ${data.length} vía${data.length > 1 ? 's' : ''} ferrata${data.length > 1 ? 's' : ''} importada${data.length > 1 ? 's' : ''} correctamente`;
-                        info.style.background = '#e8f5e9';
-                        info.style.color = 'var(--primary-color)';
-                        info.style.display = 'block';
-                        
-                        // Recargar lista y estadísticas
-                        loadFerratas();
-                        updateStats();
-                        
-                        // Recargar marcadores en el mapa
-                        setTimeout(() => {
-                            location.reload();
-                        }, 2000);
-                    }
-                } catch (error) {
-                    const info = document.getElementById('import-info');
-                    const message = document.getElementById('import-message');
-                    message.textContent = `❌ Error: Archivo JSON inválido - ${error.message}`;
-                    info.style.background = '#ffebee';
-                    info.style.color = '#c62828';
-                    info.style.display = 'block';
-                }
-            };
-            
-            reader.readAsText(file);
-            
-            // Limpiar input
-            document.getElementById('import-file').value = '';
-        }
-
-        function updateStats() {
-            const ferratas = getFerratas();
-            const container = document.getElementById('stats-container');
-            
-            if (ferratas.length === 0) {
-                container.innerHTML = `
-                    <div style="padding: 20px; text-align: center; color: var(--text-light);">
-                        <i class="fas fa-inbox" style="font-size: 2em; margin-bottom: 10px; opacity: 0.3;"></i>
-                        <p>No hay vías ferratas registradas</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Calcular estadísticas
-            const totalFerratas = ferratas.length;
-            const totalFotos = ferratas.reduce((sum, f) => sum + (f.media ? f.media.length : 0), 0);
-            const porNivel = {};
-            
-            ferratas.forEach(f => {
-                porNivel[f.nivel] = (porNivel[f.nivel] || 0) + 1;
-            });
-            
-            // Calcular tamaño
-            const dataStr = JSON.stringify(ferratas);
-            const sizeInBytes = new Blob([dataStr]).size;
-            const sizeInKB = (sizeInBytes / 1024).toFixed(2);
-            const sizeInMB = (sizeInBytes / 1024 / 1024).toFixed(2);
-            const sizeDisplay = sizeInBytes > 1024 * 1024 ? `${sizeInMB} MB` : `${sizeInKB} KB`;
-            
-            container.innerHTML = `
-                <div style="padding: 15px; background: white; border-radius: 8px; border-left: 4px solid var(--primary-color);">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: var(--text-light);">Total de Vías Ferratas</span>
-                        <strong style="font-size: 1.2em; color: var(--primary-color);">${totalFerratas}</strong>
-                    </div>
-                </div>
-                <div style="padding: 15px; background: white; border-radius: 8px; border-left: 4px solid var(--secondary-color);">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: var(--text-light);">Total de Fotos/Videos</span>
-                        <strong style="font-size: 1.2em; color: var(--secondary-color);">${totalFotos}</strong>
-                    </div>
-                </div>
-                <div style="padding: 15px; background: white; border-radius: 8px; border-left: 4px solid var(--accent-color);">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: var(--text-light);">Espacio Usado</span>
-                        <strong style="font-size: 1.2em; color: var(--accent-color);">${sizeDisplay}</strong>
-                    </div>
-                </div>
-                <div style="padding: 15px; background: white; border-radius: 8px;">
-                    <div style="margin-bottom: 10px; color: var(--text-dark); font-weight: 600;">Por Nivel:</div>
-                    ${Object.keys(porNivel).sort().map(nivel => `
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <span class="ferrata-level level-${nivel}" style="position: static; font-size: 0.85em;">${getNivelText(nivel)}</span>
-                            <span style="color: var(--text-light);">${porNivel[nivel]}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
         }
 
         // ===== MAPA =====
@@ -1335,18 +1107,6 @@
                     otrosContainer.style.display = 'none';
                     otrosText.value = '';
                 }
-            });
-
-            // Exportar datos
-            document.getElementById('export-btn').addEventListener('click', exportData);
-            
-            // Importar datos
-            document.getElementById('import-upload').addEventListener('click', function() {
-                document.getElementById('import-file').click();
-            });
-            
-            document.getElementById('import-file').addEventListener('change', function(e) {
-                importData(e.target.files[0]);
             });
         }
 
