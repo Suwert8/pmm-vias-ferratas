@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2c5f2d">
+    <link rel="manifest" href="manifest.json">
+    <title>Vías Ferratas</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2c5f2d;
+            --secondary-color: #97c93d;
+            --accent-color: #ff6b35;
+            --dark-bg: #1a1a1a;
+            --light-bg: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-dark: #333333;
+            --text-light: #666666;
+            --border-color: #e0e0e0;
+            --shadow: 0 2px 10px rgba(0,0,0,0.1);
+            --shadow-hover: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--light-bg);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            padding-bottom: 70px; /* Espacio para navegación inferior */
+            -webkit-tap-highlight-color: transparent;
+            touch-action: pan-y;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0;
+            background: var(--light-bg);
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #1e4620 100%);
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 0.9em;
+            margin: 0;
+        }
+
+        .main-content {
+            display: block;
+            padding: 0;
+        }
+
+        .section {
+            background: var(--card-bg);
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .section h2 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2em;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        /* Navegación inferior móvil */
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 15px;
+            color: var(--text-light);
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            background: none;
+            gap: 5px;
+        }
+
+        .nav-item i {
+            font-size: 1.5em;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        /* Vistas/Páginas */
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        #map {
+            width: 100%;
+            height: 400px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            touch-action: none;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-dark);
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px; /* Evita zoom en iOS */
+            transition: all 0.3s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(151, 201, 61, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .location-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1e4620;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: var(--dark-bg);
+        }
+
+        .btn-secondary:hover {
+            background: #85b535;
+            transform: translateY(-2px);
+        }
+
+        .btn-accent {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-accent:hover {
+            background: #e55a2b;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9em;
+        }
+
+        .file-upload {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: var(--secondary-color);
+            background: rgba(151, 201, 61, 0.05);
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .preview-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .preview-image {
+            position: relative;
+            width: 100%;
+            padding-top: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .preview-image img,
+        .preview-image video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-image .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+
+        .ferratas-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .ferrata-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .ferrata-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .ferrata-header {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+        }
+
+        .ferrata-header img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .ferrata-header .no-image {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 3em;
+        }
+
+        .ferrata-level {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+            box-shadow: var(--shadow);
+        }
+
+        .level-k1 {
+            background: #4caf50;
+            color: white;
+        }
+
+        .level-k2 {
+            background: #8bc34a;
+            color: white;
+        }
+
+        .level-k3 {
+            background: #ff9800;
+            color: white;
+        }
+
+        .level-k4 {
+            background: #ff5722;
+            color: white;
+        }
+
+        .level-k5 {
+            background: #f44336;
+            color: white;
+        }
+
+        .level-k6 {
+            background: #9c27b0;
+            color: white;
+        }
+
+        .ferrata-body {
+            padding: 15px;
+        }
+
+        .ferrata-title {
+            font-size: 1.3em;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+
+        .ferrata-info {
+            display: flex;
+            gap: 15px;
+            color: var(--text-light);
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .ferrata-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .ferrata-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            position: sticky;
+            top: 0;
+            background: var(--primary-color);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .media-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .media-item {
+            position: relative;
+            width: 100%;
+            padding-top: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .media-item img,
+        .media-item video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 768px) {
+            .location-buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .ferrata-actions {
+                flex-direction: column;
+            }
+
+            .ferrata-actions button {
+                width: 100%;
+            }
+        }
+
+        /* Ocultar scrollbar en móvil pero mantener funcionalidad */
+        .ferratas-list::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Botón flotante para añadir */
+        .fab {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            font-size: 1.5em;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        .coords-display {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: var(--text-light);
+        }
+
+        .filter-section {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .filter-section::-webkit-scrollbar {
+            height: 3px;
+        }
+
+        .filter-section::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        .filter-btn {
+            padding: 10px 18px;
+            border: 2px solid var(--border-color);
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .filter-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>
+                <i class="fas fa-mountain"></i>
+                Vías Ferratas
+            </h1>
+            <p>Tu guía personal</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Vista: Lista de Ferratas -->
+            <div id="view-list" class="view active">
+                <div class="section">
+                    <h2>
+                        <i class="fas fa-list"></i>
+                        Mis Vías Ferratas
+                    </h2>
+
+                    <div class="filter-section">
+                        <button class="filter-btn active" data-filter="todas">Todas</button>
+                        <button class="filter-btn" data-filter="k1">K1</button>
+                        <button class="filter-btn" data-filter="k2">K2</button>
+                        <button class="filter-btn" data-filter="k3">K3</button>
+                        <button class="filter-btn" data-filter="k4">K4</button>
+                        <button class="filter-btn" data-filter="k5">K5</button>
+                        <button class="filter-btn" data-filter="k6">K6</button>
+                    </div>
+
+                    <div id="ferratas-list" class="ferratas-list"></div>
+                </div>
+            </div>
+
+            <!-- Vista: Mapa -->
+            <div id="view-map" class="view">
+                <div class="section">
+                    <h2>
+                        <i class="fas fa-map-marked-alt"></i>
+                        Mapa
+                    </h2>
+                    <div id="map"></div>
+                </div>
+            </div>
+
+            <!-- Vista: Añadir Ferrata -->
+            <div id="view-add" class="view">
+                <div class="section">
+                    <h2>
+                        <i class="fas fa-plus-circle"></i>
+                        Nueva Vía Ferrata
+                    </h2>
+
+                    <form id="ferrata-form">
+                        <div class="form-group">
+                            <label for="nombre">
+                                <i class="fas fa-tag"></i> Nombre
+                            </label>
+                            <input type="text" id="nombre" required placeholder="Ej: Vía Ferrata del Caminito del Rey">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nivel">
+                                <i class="fas fa-chart-line"></i> Nivel de Dificultad
+                            </label>
+                            <select id="nivel" required>
+                                <option value="">Selecciona un nivel</option>
+                                <option value="k1">K1 - Muy Fácil</option>
+                                <option value="k2">K2 - Fácil</option>
+                                <option value="k3">K3 - Normal</option>
+                                <option value="k4">K4 - Moderada</option>
+                                <option value="k5">K5 - Difícil</option>
+                                <option value="k6">K6 - Muy Difícil</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descripcion">
+                                <i class="fas fa-align-left"></i> Descripción
+                            </label>
+                            <textarea id="descripcion" placeholder="Describe la vía ferrata..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-map-pin"></i> Ubicación
+                            </label>
+                            <div class="location-buttons">
+                                <button type="button" class="btn btn-secondary" id="get-location">
+                                    <i class="fas fa-crosshairs"></i>
+                                    Mi Ubicación
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="select-on-map">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    En Mapa
+                                </button>
+                            </div>
+                            <div id="coords-display" class="coords-display" style="display: none;"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-image"></i> Imagen de Portada
+                            </label>
+                            <div class="file-upload" id="cover-upload">
+                                <i class="fas fa-cloud-upload-alt" style="font-size: 2em; color: var(--secondary-color);"></i>
+                                <p>Seleccionar imagen</p>
+                                <input type="file" id="cover-image" accept="image/*">
+                            </div>
+                            <div id="cover-preview" class="preview-images"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-images"></i> Más Fotos/Videos
+                            </label>
+                            <div class="file-upload" id="media-upload">
+                                <i class="fas fa-photo-video" style="font-size: 2em; color: var(--accent-color);"></i>
+                                <p>Añadir fotos o videos</p>
+                                <input type="file" id="media-files" accept="image/*,video/*" multiple>
+                            </div>
+                            <div id="media-preview" class="preview-images"></div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">
+                            <i class="fas fa-save"></i>
+                            Guardar Vía Ferrata
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navegación inferior móvil -->
+        <nav class="mobile-nav">
+            <button class="nav-item active" data-view="list">
+                <i class="fas fa-list"></i>
+                <span>Lista</span>
+            </button>
+            <button class="nav-item" data-view="map">
+                <i class="fas fa-map"></i>
+                <span>Mapa</span>
+            </button>
+            <button class="nav-item" data-view="add">
+                <i class="fas fa-plus-circle"></i>
+                <span>Añadir</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Modal para ver detalles -->
+    <div id="detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title"></h2>
+                <button class="modal-close" id="close-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // ===== VARIABLES GLOBALES =====
+        let map;
+        let marker;
+        let selectedCoords = null;
+        let coverImageData = null;
+        let mediaFiles = [];
+        let selectingOnMap = false;
+        let currentFilter = 'todas';
+
+        // ===== INICIALIZACIÓN =====
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            loadFerratas();
+            setupEventListeners();
+            setupMobileNavigation();
+        });
+
+        // ===== NAVEGACIÓN MÓVIL =====
+        function setupMobileNavigation() {
+            const navItems = document.querySelectorAll('.nav-item');
+            const views = document.querySelectorAll('.view');
+
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const viewName = this.dataset.view;
+                    
+                    // Actualizar navegación activa
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Mostrar vista correspondiente
+                    views.forEach(view => view.classList.remove('active'));
+                    document.getElementById(`view-${viewName}`).classList.add('active');
+                    
+                    // Si cambiamos a mapa, invalidar tamaño
+                    if (viewName === 'map') {
+                        setTimeout(() => {
+                            map.invalidateSize();
+                        }, 100);
+                    }
+                });
+            });
+        }
+
+        // ===== MAPA =====
+        function initMap() {
+            // Centrar en España por defecto
+            map = L.map('map').setView([40.4168, -3.7038], 6);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Click en el mapa
+            map.on('click', function(e) {
+                if (selectingOnMap) {
+                    setLocation(e.latlng.lat, e.latlng.lng);
+                    selectingOnMap = false;
+                    document.getElementById('select-on-map').classList.remove('btn-accent');
+                    document.getElementById('select-on-map').classList.add('btn-secondary');
+                }
+            });
+
+            // Cargar marcadores de ferratas guardadas
+            loadMarkersOnMap();
+        }
+
+        function setLocation(lat, lng) {
+            selectedCoords = { lat, lng };
+            
+            if (marker) {
+                map.removeLayer(marker);
+            }
+
+            marker = L.marker([lat, lng]).addTo(map);
+            map.setView([lat, lng], 13);
+
+            document.getElementById('coords-display').style.display = 'block';
+            document.getElementById('coords-display').textContent = 
+                `📍 Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+        }
+
+        function loadMarkersOnMap() {
+            const ferratas = getFerratas();
+            ferratas.forEach(ferrata => {
+                const ferrataMarker = L.marker([ferrata.lat, ferrata.lng])
+                    .addTo(map)
+                    .bindPopup(`<b>${ferrata.nombre}</b><br>Nivel: ${getNivelText(ferrata.nivel)}`);
+                
+                ferrataMarker.on('click', function() {
+                    showFerrataDetail(ferrata.id);
+                });
+            });
+        }
+
+        // ===== EVENT LISTENERS =====
+        function setupEventListeners() {
+            // Geolocalización
+            document.getElementById('get-location').addEventListener('click', function() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        position => {
+                            setLocation(position.coords.latitude, position.coords.longitude);
+                        },
+                        error => {
+                            alert('No se pudo obtener tu ubicación. Por favor, selecciona en el mapa.');
+                        }
+                    );
+                } else {
+                    alert('Tu navegador no soporta geolocalización.');
+                }
+            });
+
+            // Seleccionar en mapa
+            document.getElementById('select-on-map').addEventListener('click', function() {
+                // Cambiar a vista de mapa
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                document.querySelector('[data-view="map"]').classList.add('active');
+                document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+                document.getElementById('view-map').classList.add('active');
+                
+                setTimeout(() => {
+                    map.invalidateSize();
+                    selectingOnMap = !selectingOnMap;
+                    if (selectingOnMap) {
+                        this.classList.remove('btn-secondary');
+                        this.classList.add('btn-accent');
+                        alert('Haz click en el mapa para seleccionar la ubicación. Luego vuelve a "Añadir"');
+                    } else {
+                        this.classList.remove('btn-accent');
+                        this.classList.add('btn-secondary');
+                    }
+                }, 100);
+            });
+
+            // Upload de imagen de portada
+            document.getElementById('cover-upload').addEventListener('click', function() {
+                document.getElementById('cover-image').click();
+            });
+
+            document.getElementById('cover-image').addEventListener('change', function(e) {
+                handleCoverImage(e.target.files[0]);
+            });
+
+            // Upload de media
+            document.getElementById('media-upload').addEventListener('click', function() {
+                document.getElementById('media-files').click();
+            });
+
+            document.getElementById('media-files').addEventListener('change', function(e) {
+                handleMediaFiles(Array.from(e.target.files));
+            });
+
+            // Formulario
+            document.getElementById('ferrata-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveFerratahandleFormSubmit();
+            });
+
+            // Filtros
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentFilter = this.dataset.filter;
+                    loadFerratas();
+                });
+            });
+
+            // Modal
+            document.getElementById('close-modal').addEventListener('click', closeModal);
+            document.getElementById('detail-modal').addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
+        }
+
+        // ===== MANEJO DE ARCHIVOS =====
+        function handleCoverImage(file) {
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                coverImageData = e.target.result;
+                const preview = document.getElementById('cover-preview');
+                preview.innerHTML = `
+                    <div class="preview-image">
+                        <img src="${e.target.result}" alt="Portada">
+                        <button type="button" class="remove-btn" onclick="removeCoverImage()">×</button>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeCoverImage() {
+            coverImageData = null;
+            document.getElementById('cover-preview').innerHTML = '';
+            document.getElementById('cover-image').value = '';
+        }
+
+        function handleMediaFiles(files) {
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    mediaFiles.push({
+                        type: file.type.startsWith('video') ? 'video' : 'image',
+                        data: e.target.result,
+                        name: file.name
+                    });
+                    updateMediaPreview();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function updateMediaPreview() {
+            const preview = document.getElementById('media-preview');
+            preview.innerHTML = mediaFiles.map((media, index) => {
+                const tag = media.type === 'video' 
+                    ? `<video src="${media.data}" controls></video>`
+                    : `<img src="${media.data}" alt="${media.name}">`;
+                
+                return `
+                    <div class="preview-image">
+                        ${tag}
+                        <button type="button" class="remove-btn" onclick="removeMedia(${index})">×</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function removeMedia(index) {
+            mediaFiles.splice(index, 1);
+            updateMediaPreview();
+        }
+
+        // ===== CRUD FERRATAS =====
+        function handleFormSubmit() {
+            if (!selectedCoords) {
+                alert('Por favor, selecciona una ubicación en el mapa');
+                return;
+            }
+
+            const ferrata = {
+                id: Date.now(),
+                nombre: document.getElementById('nombre').value,
+                nivel: document.getElementById('nivel').value,
+                descripcion: document.getElementById('descripcion').value,
+                lat: selectedCoords.lat,
+                lng: selectedCoords.lng,
+                coverImage: coverImageData,
+                media: mediaFiles,
+                fecha: new Date().toISOString()
+            };
+
+            saveFerrataToStorage(ferrata);
+            resetForm();
+            loadFerratas();
+            
+            // Añadir marcador al mapa
+            const newMarker = L.marker([ferrata.lat, ferrata.lng])
+                .addTo(map)
+                .bindPopup(`<b>${ferrata.nombre}</b><br>Nivel: ${getNivelText(ferrata.nivel)}`);
+            
+            newMarker.on('click', function() {
+                showFerrataDetail(ferrata.id);
+            });
+
+            // Volver a la vista de lista
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            document.querySelector('[data-view="list"]').classList.add('active');
+            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+            document.getElementById('view-list').classList.add('active');
+
+            alert('¡Vía Ferrata guardada exitosamente!');
+        }
+
+        function saveFerrataToStorage(ferrata) {
+            const ferratas = getFerratas();
+            ferratas.push(ferrata);
+            localStorage.setItem('ferratas', JSON.stringify(ferratas));
+        }
+
+        function getFerratas() {
+            const data = localStorage.getItem('ferratas');
+            return data ? JSON.parse(data) : [];
+        }
+
+        function deleteFerrataFromStorage(id) {
+            const ferratas = getFerratas().filter(f => f.id !== id);
+            localStorage.setItem('ferratas', JSON.stringify(ferratas));
+        }
+
+        function resetForm() {
+            document.getElementById('ferrata-form').reset();
+            selectedCoords = null;
+            coverImageData = null;
+            mediaFiles = [];
+            document.getElementById('cover-preview').innerHTML = '';
+            document.getElementById('media-preview').innerHTML = '';
+            document.getElementById('coords-display').style.display = 'none';
+            if (marker) {
+                map.removeLayer(marker);
+                marker = null;
+            }
+        }
+
+        // ===== VISUALIZACIÓN =====
+        function loadFerratas() {
+            const ferratas = getFerratas();
+            const container = document.getElementById('ferratas-list');
+
+            let filtered = ferratas;
+            if (currentFilter !== 'todas') {
+                filtered = ferratas.filter(f => f.nivel === currentFilter);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-mountain"></i>
+                        <h3>No hay vías ferratas guardadas</h3>
+                        <p>Añade tu primera vía ferrata usando el formulario</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(ferrata => `
+                <div class="ferrata-card" onclick="showFerrataDetail(${ferrata.id})">
+                    <div class="ferrata-header">
+                        ${ferrata.coverImage 
+                            ? `<img src="${ferrata.coverImage}" alt="${ferrata.nombre}">`
+                            : `<div class="no-image"><i class="fas fa-mountain"></i></div>`
+                        }
+                        <div class="ferrata-level level-${ferrata.nivel}">
+                            ${getNivelText(ferrata.nivel)}
+                        </div>
+                    </div>
+                    <div class="ferrata-body">
+                        <div class="ferrata-title">${ferrata.nombre}</div>
+                        <div class="ferrata-info">
+                            <span><i class="fas fa-map-marker-alt"></i> ${ferrata.lat.toFixed(4)}, ${ferrata.lng.toFixed(4)}</span>
+                            <span><i class="fas fa-images"></i> ${ferrata.media.length}</span>
+                        </div>
+                        ${ferrata.descripcion ? `<p style="color: var(--text-light); margin-top: 10px;">${ferrata.descripcion.substring(0, 100)}${ferrata.descripcion.length > 100 ? '...' : ''}</p>` : ''}
+                        <div class="ferrata-actions">
+                            <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); showOnMap(${ferrata.lat}, ${ferrata.lng})">
+                                <i class="fas fa-map"></i> Ver en Mapa
+                            </button>
+                            <button class="btn btn-accent btn-small" onclick="event.stopPropagation(); deleteFerrataconfirmDelete(${ferrata.id})">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showFerrataDetail(id) {
+            const ferrata = getFerratas().find(f => f.id === id);
+            if (!ferrata) return;
+
+            const modal = document.getElementById('detail-modal');
+            const title = document.getElementById('modal-title');
+            const body = document.getElementById('modal-body');
+
+            title.textContent = ferrata.nombre;
+            body.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    ${ferrata.coverImage 
+                        ? `<img src="${ferrata.coverImage}" alt="${ferrata.nombre}" style="width: 100%; border-radius: 10px;">`
+                        : ''
+                    }
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong><i class="fas fa-chart-line"></i> Nivel:</strong> 
+                    <span class="ferrata-level level-${ferrata.nivel}" style="position: static; margin-left: 10px;">
+                        ${getNivelText(ferrata.nivel)}
+                    </span>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong><i class="fas fa-map-marker-alt"></i> Ubicación:</strong> 
+                    ${ferrata.lat.toFixed(6)}, ${ferrata.lng.toFixed(6)}
+                    <button class="btn btn-secondary btn-small" style="margin-left: 10px;" onclick="showOnMap(${ferrata.lat}, ${ferrata.lng})">
+                        <i class="fas fa-map"></i> Ver en Mapa
+                    </button>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong><i class="fas fa-calendar"></i> Fecha:</strong> 
+                    ${new Date(ferrata.fecha).toLocaleDateString('es-ES')}
+                </div>
+                ${ferrata.descripcion ? `
+                    <div style="margin-bottom: 20px;">
+                        <strong><i class="fas fa-align-left"></i> Descripción:</strong>
+                        <p style="margin-top: 10px; color: var(--text-light);">${ferrata.descripcion}</p>
+                    </div>
+                ` : ''}
+                ${ferrata.media.length > 0 ? `
+                    <div>
+                        <strong><i class="fas fa-images"></i> Galería (${ferrata.media.length}):</strong>
+                        <div class="media-gallery">
+                            ${ferrata.media.map((media, index) => {
+                                const tag = media.type === 'video'
+                                    ? `<video src="${media.data}" controls></video>`
+                                    : `<img src="${media.data}" alt="Foto ${index + 1}">`;
+                                return `<div class="media-item" onclick="openFullscreen('${media.data}', '${media.type}')">${tag}</div>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('detail-modal').classList.remove('active');
+        }
+
+        function showOnMap(lat, lng) {
+            closeModal();
+            
+            // Cambiar a vista de mapa
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            document.querySelector('[data-view="map"]').classList.add('active');
+            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+            document.getElementById('view-map').classList.add('active');
+            
+            setTimeout(() => {
+                map.invalidateSize();
+                map.setView([lat, lng], 15);
+            }, 100);
+        }
+
+        function confirmDelete(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar esta vía ferrata?')) {
+                deleteFerrataFromStorage(id);
+                loadFerratas();
+                // Recargar mapa para quitar marcador
+                location.reload();
+            }
+        }
+
+        function openFullscreen(src, type) {
+            const fullscreen = window.open('', '_blank');
+            const tag = type === 'video'
+                ? `<video src="${src}" controls autoplay style="width: 100%; height: 100%;"></video>`
+                : `<img src="${src}" style="width: 100%; height: 100%; object-fit: contain;">`;
+            
+            fullscreen.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Vista Completa</title>
+                    <style>
+                        body { margin: 0; background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; }
+                    </style>
+                </head>
+                <body>${tag}</body>
+                </html>
+            `);
+        }
+
+        // ===== UTILIDADES =====
+        function getNivelText(nivel) {
+            const niveles = {
+                'k1': 'K1 - Muy Fácil',
+                'k2': 'K2 - Fácil',
+                'k3': 'K3 - Normal',
+                'k4': 'K4 - Moderada',
+                'k5': 'K5 - Difícil',
+                'k6': 'K6 - Muy Difícil'
+            };
+            return niveles[nivel] || nivel;
+        }
+    </script>
+</body>
+</html>
