@@ -680,6 +680,14 @@
                 Vías Ferratas
             </h1>
             <p>Tu guía personal</p>
+            <button 
+                class="btn btn-secondary" 
+                id="config-ia-btn" 
+                style="position: absolute; top: 15px; right: 15px; padding: 8px 12px; font-size: 0.9em;"
+                title="Configurar API Key de IA"
+            >
+                <i class="fas fa-key"></i> IA
+            </button>
         </header>
 
         <div class="main-content">
@@ -1130,6 +1138,49 @@
 
             // Generar descripción con IA
             document.getElementById('generar-ia-btn').addEventListener('click', generarDescripcionIA);
+            
+            // Configurar API key de IA
+            document.getElementById('config-ia-btn').addEventListener('click', configurarAPIKey);
+        }
+
+        // ===== CONFIGURACIÓN API KEY =====
+        function configurarAPIKey() {
+            const apiKeyActual = localStorage.getItem('huggingface_api_key');
+            
+            let mensaje = '🤖 Configuración de IA - Hugging Face\n\n';
+            
+            if (apiKeyActual) {
+                mensaje += '✅ API Key configurada\n\n';
+                mensaje += '¿Qué deseas hacer?\n\n';
+                mensaje += '1. Escribe una nueva API key para cambiarla\n';
+                mensaje += '2. Escribe "eliminar" para borrarla\n';
+                mensaje += '3. Cancela para mantener la actual\n\n';
+                mensaje += 'API Key actual: ' + apiKeyActual.substring(0, 10) + '...';
+            } else {
+                mensaje += '❌ No hay API Key configurada\n\n';
+                mensaje += 'Para obtener tu API Key gratuita:\n\n';
+                mensaje += '1. Regístrate en https://huggingface.co/join\n';
+                mensaje += '2. Ve a https://huggingface.co/settings/tokens\n';
+                mensaje += '3. Crea un token de tipo "Read"\n';
+                mensaje += '4. Copia y pega el token aquí:';
+            }
+            
+            const input = prompt(mensaje);
+            
+            if (input === null) {
+                return; // Usuario canceló
+            }
+            
+            if (input.toLowerCase() === 'eliminar') {
+                localStorage.removeItem('huggingface_api_key');
+                alert('✅ API Key eliminada correctamente');
+                return;
+            }
+            
+            if (input.trim() !== '') {
+                localStorage.setItem('huggingface_api_key', input.trim());
+                alert('✅ API Key guardada correctamente.\n\nYa puedes usar el botón "Generar con IA" en el formulario.');
+            }
         }
 
         // ===== GENERACIÓN CON IA =====
@@ -1141,6 +1192,25 @@
             if (!keywords && !nombre) {
                 alert('Por favor, escribe algunas palabras clave o el nombre de la vía ferrata');
                 return;
+            }
+            
+            // Verificar si hay API key configurada
+            let apiKey = localStorage.getItem('huggingface_api_key');
+            
+            if (!apiKey) {
+                apiKey = prompt('Para usar la IA, necesitas una API key de Hugging Face (gratuita).\n\n' +
+                    '1. Regístrate en https://huggingface.co/join\n' +
+                    '2. Ve a https://huggingface.co/settings/tokens\n' +
+                    '3. Crea un token de tipo "Read"\n' +
+                    '4. Copia y pega el token aquí:\n\n' +
+                    'Tu API key se guardará en el navegador de forma segura.');
+                
+                if (!apiKey || apiKey.trim() === '') {
+                    return;
+                }
+                
+                // Guardar API key
+                localStorage.setItem('huggingface_api_key', apiKey.trim());
             }
             
             const statusDiv = document.getElementById('ia-status');
@@ -1177,6 +1247,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
                         },
                         body: JSON.stringify({
                             inputs: prompt,
@@ -1191,10 +1262,22 @@
                 );
                 
                 if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        // API key inválida
+                        localStorage.removeItem('huggingface_api_key');
+                        throw new Error('API key inválida. Por favor, verifica tu token.');
+                    }
                     throw new Error('Error al conectar con el servicio de IA');
                 }
                 
                 const data = await response.json();
+                
+                if (data.error) {
+                    if (data.error.includes('loading')) {
+                        throw new Error('El modelo se está cargando. Intenta de nuevo en 20 segundos.');
+                    }
+                    throw new Error(data.error);
+                }
                 
                 if (data && data[0] && data[0].generated_text) {
                     let descripcionGenerada = data[0].generated_text.trim();
