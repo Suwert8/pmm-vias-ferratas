@@ -566,38 +566,33 @@
 
         .filter-section {
             margin-bottom: 15px;
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 5px;
-            -webkit-overflow-scrolling: touch;
         }
 
-        .filter-section::-webkit-scrollbar {
-            height: 3px;
+        .filter-section label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-dark);
+            font-weight: 600;
+            font-size: 0.95em;
         }
 
-        .filter-section::-webkit-scrollbar-thumb {
-            background: var(--primary-color);
-            border-radius: 3px;
-        }
-
-        .filter-btn {
-            padding: 10px 18px;
-            border: 2px solid var(--border-color);
+        .filter-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--primary-color);
             background: white;
-            border-radius: 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
             cursor: pointer;
             transition: all 0.3s;
-            white-space: nowrap;
-            font-size: 0.9em;
-            font-weight: 600;
         }
 
-        .filter-btn.active {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(151, 201, 61, 0.1);
         }
     </style>
 </head>
@@ -621,13 +616,18 @@
                     </h2>
 
                     <div class="filter-section">
-                        <button class="filter-btn active" data-filter="todas">Todas</button>
-                        <button class="filter-btn" data-filter="k1">K1</button>
-                        <button class="filter-btn" data-filter="k2">K2</button>
-                        <button class="filter-btn" data-filter="k3">K3</button>
-                        <button class="filter-btn" data-filter="k4">K4</button>
-                        <button class="filter-btn" data-filter="k5">K5</button>
-                        <button class="filter-btn" data-filter="k6">K6</button>
+                        <label for="filter-select">
+                            <i class="fas fa-filter"></i> Filtrar por nivel:
+                        </label>
+                        <select id="filter-select" class="filter-select">
+                            <option value="todas">Todas</option>
+                            <option value="k1">K1 - Muy Fácil</option>
+                            <option value="k2">K2 - Fácil</option>
+                            <option value="k3">K3 - Normal</option>
+                            <option value="k4">K4 - Moderada</option>
+                            <option value="k5">K5 - Difícil</option>
+                            <option value="k6">K6 - Muy Difícil</option>
+                        </select>
                     </div>
 
                     <div id="ferratas-list" class="ferratas-list"></div>
@@ -928,13 +928,9 @@
             });
 
             // Filtros
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    currentFilter = this.dataset.filter;
-                    loadFerratas();
-                });
+            document.getElementById('filter-select').addEventListener('change', function() {
+                currentFilter = this.value;
+                loadFerratas();
             });
 
             // Modal
