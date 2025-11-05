@@ -1172,11 +1172,31 @@
 
         // ===== CRUD FERRATAS =====
         function handleFormSubmit() {
+            // Si no hay ubicación seleccionada, obtener ubicación actual
             if (!selectedCoords) {
-                alert('Por favor, selecciona una ubicación en el mapa');
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            setLocation(position.coords.latitude, position.coords.longitude);
+                            // Después de obtener la ubicación, procesar el formulario
+                            processFormSubmit();
+                        },
+                        function(error) {
+                            alert('No se pudo obtener tu ubicación. Por favor, selecciona una ubicación en el mapa.');
+                            console.error('Error obteniendo ubicación:', error);
+                        }
+                    );
+                } else {
+                    alert('Tu navegador no soporta geolocalización. Por favor, selecciona una ubicación en el mapa.');
+                }
                 return;
             }
+            
+            // Si ya hay ubicación seleccionada, procesar directamente
+            processFormSubmit();
+        }
 
+        function processFormSubmit() {
             // Recoger material necesario
             const material = {
                 casco: true, // siempre obligatorio
