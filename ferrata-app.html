@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#2c5f2d">
     <link rel="manifest" href="manifest.json">
-    <title>Vías Ferratas</title>
+    <title>VÃ­as Ferratas</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -43,7 +43,7 @@
             min-height: 100vh;
             margin: 0;
             padding: 0;
-            padding-bottom: 70px; /* Espacio para navegación inferior */
+            padding-bottom: 70px; /* Espacio para navegaciÃ³n inferior */
             -webkit-tap-highlight-color: transparent;
             touch-action: pan-y;
         }
@@ -102,7 +102,7 @@
             border-bottom: 2px solid var(--border-color);
         }
 
-        /* Navegación inferior móvil */
+        /* NavegaciÃ³n inferior mÃ³vil */
         .mobile-nav {
             position: fixed;
             bottom: 0;
@@ -138,7 +138,7 @@
             color: var(--primary-color);
         }
 
-        /* Vistas/Páginas */
+        /* Vistas/PÃ¡ginas */
         .view {
             display: none;
         }
@@ -525,12 +525,12 @@
             }
         }
 
-        /* Ocultar scrollbar en móvil pero mantener funcionalidad */
+        /* Ocultar scrollbar en mÃ³vil pero mantener funcionalidad */
         .ferratas-list::-webkit-scrollbar {
             display: none;
         }
 
-        /* Botón flotante para añadir */
+        /* BotÃ³n flotante para aÃ±adir */
         .fab {
             position: fixed;
             bottom: 80px;
@@ -678,9 +678,9 @@
         <header>
             <h1>
                 <i class="fas fa-mountain"></i>
-                Vías Ferratas
+                VÃ­as Ferratas
             </h1>
-            <p>Tu guía personal</p>
+            <p>Tu guÃ­a personal</p>
         </header>
 
         <div class="main-content">
@@ -689,7 +689,7 @@
                 <div class="section">
                     <h2>
                         <i class="fas fa-list"></i>
-                        Mis Vías Ferratas
+                        Mis VÃ­as Ferratas
                     </h2>
 
                     <div class="filter-section">
@@ -698,12 +698,12 @@
                         </label>
                         <select id="filter-select" class="filter-select">
                             <option value="todas">Todas</option>
-                            <option value="k1">K1 - Muy Fácil</option>
-                            <option value="k2">K2 - Fácil</option>
+                            <option value="k1">K1 - Muy FÃ¡cil</option>
+                            <option value="k2">K2 - FÃ¡cil</option>
                             <option value="k3">K3 - Normal</option>
                             <option value="k4">K4 - Moderada</option>
-                            <option value="k5">K5 - Difícil</option>
-                            <option value="k6">K6 - Muy Difícil</option>
+                            <option value="k5">K5 - DifÃ­cil</option>
+                            <option value="k6">K6 - Muy DifÃ­cil</option>
                         </select>
                     </div>
 
@@ -736,12 +736,12 @@
                 </div>
             </div>
 
-            <!-- Vista: Añadir Ferrata -->
+            <!-- Vista: AÃ±adir Ferrata -->
             <div id="view-add" class="view">
                 <div class="section">
                     <h2 id="form-title">
                         <i class="fas fa-plus-circle"></i>
-                        Nueva Vía Ferrata
+                        Nueva VÃ­a Ferrata
                     </h2>
 
                     <form id="ferrata-form">
@@ -749,7 +749,7 @@
                             <label for="nombre">
                                 <i class="fas fa-tag"></i> Nombre
                             </label>
-                            <input type="text" id="nombre" required placeholder="Ej: Vía Ferrata del Caminito del Rey">
+                            <input type="text" id="nombre" required placeholder="Ej: VÃ­a Ferrata del Caminito del Rey">
                         </div>
 
                         <div class="form-group">
@@ -758,18 +758,18 @@
                             </label>
                             <select id="nivel" required>
                                 <option value="">Selecciona un nivel</option>
-                                <option value="k1">K1 - Muy Fácil</option>
-                                <option value="k2">K2 - Fácil</option>
+                                <option value="k1">K1 - Muy FÃ¡cil</option>
+                                <option value="k2">K2 - FÃ¡cil</option>
                                 <option value="k3">K3 - Normal</option>
                                 <option value="k4">K4 - Moderada</option>
-                                <option value="k5">K5 - Difícil</option>
-                                <option value="k6">K6 - Muy Difícil</option>
+                                <option value="k5">K5 - DifÃ­cil</option>
+                                <option value="k6">K6 - Muy DifÃ­cil</option>
                             </select>
                         </div>
 
                         <div class="form-group">
                             <label for="descripcion">
-                                <i class="fas fa-align-left"></i> Descripción
+                                <i class="fas fa-align-left"></i> DescripciÃ³n
                             </label>
                             <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                                 <input 
@@ -787,9 +787,9 @@
                                     <i class="fas fa-magic"></i> Auto-generar
                                 </button>
                             </div>
-                            <textarea id="descripcion" placeholder="La descripción generada aparecerá aquí..."></textarea>
+                            <textarea id="descripcion" placeholder="La descripciÃ³n generada aparecerÃ¡ aquÃ­..."></textarea>
                             <div id="ia-status" style="margin-top: 5px; font-size: 0.85em; color: var(--text-light); display: none;">
-                                <i class="fas fa-spinner fa-spin"></i> Generando descripción...
+                                <i class="fas fa-spinner fa-spin"></i> Generando descripciÃ³n...
                             </div>
                         </div>
 
@@ -813,7 +813,7 @@
                                 <div class="material-item required">
                                     <input type="checkbox" id="mat-arnes" checked disabled>
                                     <label for="mat-arnes">
-                                        <i class="fas fa-vest"></i> Arnés (Obligatorio)
+                                        <i class="fas fa-vest"></i> ArnÃ©s (Obligatorio)
                                     </label>
                                 </div>
                                 <div class="material-item">
@@ -847,19 +847,19 @@
                                     </label>
                                 </div>
                                 <div id="otros-text-container" style="display: none; margin-top: 10px;">
-                                    <input type="text" id="mat-otros-text" placeholder="Especifica qué otros materiales necesitas...">
+                                    <input type="text" id="mat-otros-text" placeholder="Especifica quÃ© otros materiales necesitas...">
                                 </div>
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label>
-                                <i class="fas fa-map-pin"></i> Ubicación
+                                <i class="fas fa-map-pin"></i> UbicaciÃ³n
                             </label>
                             <div class="location-buttons">
                                 <button type="button" class="btn btn-secondary" id="get-location">
                                     <i class="fas fa-crosshairs"></i>
-                                    Mi Ubicación
+                                    Mi UbicaciÃ³n
                                 </button>
                                 <button type="button" class="btn btn-secondary" id="select-on-map">
                                     <i class="fas fa-map-marker-alt"></i>
@@ -883,11 +883,11 @@
 
                         <div class="form-group">
                             <label>
-                                <i class="fas fa-images"></i> Más Fotos/Videos
+                                <i class="fas fa-images"></i> MÃ¡s Fotos/Videos
                             </label>
                             <div class="file-upload" id="media-upload">
                                 <i class="fas fa-photo-video" style="font-size: 2em; color: var(--accent-color);"></i>
-                                <p>Añadir fotos o videos</p>
+                                <p>AÃ±adir fotos o videos</p>
                                 <input type="file" id="media-files" accept="image/*,video/*" multiple>
                             </div>
                             <div id="media-preview" class="preview-images"></div>
@@ -895,14 +895,14 @@
 
                         <button type="submit" class="btn btn-primary" style="width: 100%;">
                             <i class="fas fa-save"></i>
-                            Guardar Vía Ferrata
+                            Guardar VÃ­a Ferrata
                         </button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <!-- Navegación inferior móvil -->
+        <!-- NavegaciÃ³n inferior mÃ³vil -->
         <nav class="mobile-nav">
             <button class="nav-item active" data-view="list">
                 <i class="fas fa-list"></i>
@@ -914,7 +914,7 @@
             </button>
             <button class="nav-item" data-view="add">
                 <i class="fas fa-plus-circle"></i>
-                <span>Añadir</span>
+                <span>AÃ±adir</span>
             </button>
         </nav>
     </div>
@@ -947,7 +947,13 @@
         let currentMaterialFilter = 'todos';
         let editingFerrataId = null;
 
-        // ===== INICIALIZACIÓN =====
+        // Detectar si es dispositivo móvil
+        function isMobileDevice() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+        }
+
+        // ===== INICIALIZACIÃ“N =====
         document.addEventListener('DOMContentLoaded', async function() {
             initMap();
             
@@ -961,9 +967,17 @@
             
             setupEventListeners();
             setupMobileNavigation();
+
+            // Ocultar opción de añadir si no es móvil
+            if (!isMobileDevice()) {
+                const addButton = document.querySelector('[data-view="add"]');
+                if (addButton) {
+                    addButton.style.display = 'none';
+                }
+            }
         });
 
-        // ===== NAVEGACIÓN MÓVIL =====
+        // ===== NAVEGACIÃ“N MÃ“VIL =====
         function setupMobileNavigation() {
             const navItems = document.querySelectorAll('.nav-item');
             const views = document.querySelectorAll('.view');
@@ -972,7 +986,7 @@
                 item.addEventListener('click', function() {
                     const viewName = this.dataset.view;
                     
-                    // Actualizar navegación activa
+                    // Actualizar navegaciÃ³n activa
                     navItems.forEach(nav => nav.classList.remove('active'));
                     this.classList.add('active');
                     
@@ -980,7 +994,7 @@
                     views.forEach(view => view.classList.remove('active'));
                     document.getElementById(`view-${viewName}`).classList.add('active');
                     
-                    // Si cambiamos a mapa, invalidar tamaño
+                    // Si cambiamos a mapa, invalidar tamaÃ±o
                     if (viewName === 'map') {
                         setTimeout(() => {
                             map.invalidateSize();
@@ -992,11 +1006,11 @@
 
         // ===== MAPA =====
         function initMap() {
-            // Centrar en España por defecto
+            // Centrar en EspaÃ±a por defecto
             map = L.map('map').setView([40.4168, -3.7038], 6);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
+                attribution: 'Â© OpenStreetMap contributors',
                 maxZoom: 19
             }).addTo(map);
 
@@ -1026,7 +1040,7 @@
 
             document.getElementById('coords-display').style.display = 'block';
             document.getElementById('coords-display').textContent = 
-                `📍 Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+                `ðŸ“ Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
         }
 
         function loadMarkersOnMap() {
@@ -1044,7 +1058,7 @@
 
         // ===== EVENT LISTENERS =====
         function setupEventListeners() {
-            // Geolocalización
+            // GeolocalizaciÃ³n
             document.getElementById('get-location').addEventListener('click', function() {
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
@@ -1052,11 +1066,11 @@
                             setLocation(position.coords.latitude, position.coords.longitude);
                         },
                         error => {
-                            alert('No se pudo obtener tu ubicación. Por favor, selecciona en el mapa.');
+                            alert('No se pudo obtener tu ubicaciÃ³n. Por favor, selecciona en el mapa.');
                         }
                     );
                 } else {
-                    alert('Tu navegador no soporta geolocalización.');
+                    alert('Tu navegador no soporta geolocalizaciÃ³n.');
                 }
             });
 
@@ -1074,7 +1088,7 @@
                     if (selectingOnMap) {
                         this.classList.remove('btn-secondary');
                         this.classList.add('btn-accent');
-                        alert('Haz click en el mapa para seleccionar la ubicación. Luego vuelve a "Añadir"');
+                        alert('Haz click en el mapa para seleccionar la ubicaciÃ³n. Luego vuelve a "AÃ±adir"');
                     } else {
                         this.classList.remove('btn-accent');
                         this.classList.add('btn-secondary');
@@ -1137,18 +1151,18 @@
                 }
             });
 
-            // Generar descripción con IA
+            // Generar descripciÃ³n con IA
             document.getElementById('generar-ia-btn').addEventListener('click', generarDescripcionIA);
         }
 
-        // ===== GENERACIÓN CON IA =====
+        // ===== GENERACIÃ“N CON IA =====
         async function generarDescripcionIA() {
             const keywords = document.getElementById('descripcion-keywords').value.trim();
             const nivel = document.getElementById('nivel').value;
             const nombre = document.getElementById('nombre').value.trim();
             
             if (!keywords && !nombre) {
-                alert('Por favor, escribe algunas palabras clave o el nombre de la vía ferrata');
+                alert('Por favor, escribe algunas palabras clave o el nombre de la vÃ­a ferrata');
                 return;
             }
             
@@ -1161,13 +1175,13 @@
             btnGenerar.disabled = true;
             
             try {
-                // Generar descripción usando plantillas inteligentes
+                // Generar descripciÃ³n usando plantillas inteligentes
                 const descripcionGenerada = generarDescripcionInteligente(nombre, nivel, keywords);
                 
                 // Actualizar el textarea
                 descripcionTextarea.value = descripcionGenerada;
                 
-                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ¡Descripción generada! Puedes editarla si lo deseas.';
+                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> Â¡DescripciÃ³n generada! Puedes editarla si lo deseas.';
                 statusDiv.style.color = 'var(--primary-color)';
                 
                 setTimeout(() => {
@@ -1175,7 +1189,7 @@
                 }, 3000);
                 
             } catch (error) {
-                console.error('Error generando descripción:', error);
+                console.error('Error generando descripciÃ³n:', error);
                 statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error al generar. Intenta de nuevo o escribe manualmente.';
                 statusDiv.style.color = 'var(--accent-color)';
                 
@@ -1188,62 +1202,62 @@
         }
 
         function generarDescripcionInteligente(nombre, nivel, keywords) {
-            // Plantillas base según nivel de dificultad
+            // Plantillas base segÃºn nivel de dificultad
             const plantillasPorNivel = {
                 'k1': [
-                    'Una vía ferrata perfecta para iniciarse en esta emocionante actividad',
+                    'Una vÃ­a ferrata perfecta para iniciarse en esta emocionante actividad',
                     'Recorrido muy accesible ideal para familias y principiantes',
-                    'Excelente opción para quienes buscan una primera experiencia en vía ferrata'
+                    'Excelente opciÃ³n para quienes buscan una primera experiencia en vÃ­a ferrata'
                 ],
                 'k2': [
-                    'Vía ferrata de dificultad baja, adecuada para personas con poca experiencia',
-                    'Recorrido asequible que combina diversión y seguridad',
-                    'Perfecta para adentrarse en el mundo de las vías ferratas'
+                    'VÃ­a ferrata de dificultad baja, adecuada para personas con poca experiencia',
+                    'Recorrido asequible que combina diversiÃ³n y seguridad',
+                    'Perfecta para adentrarse en el mundo de las vÃ­as ferratas'
                 ],
                 'k3': [
-                    'Vía ferrata de dificultad media que ofrece un reto moderado',
-                    'Recorrido equilibrado que combina técnica y disfrute del paisaje',
+                    'VÃ­a ferrata de dificultad media que ofrece un reto moderado',
+                    'Recorrido equilibrado que combina tÃ©cnica y disfrute del paisaje',
                     'Experiencia gratificante para aventureros con algo de experiencia'
                 ],
                 'k4': [
-                    'Vía ferrata de nivel moderado-alto que requiere buena forma física',
-                    'Recorrido técnico con tramos desafiantes y vistas impresionantes',
-                    'Aventura emocionante para montañeros con experiencia previa'
+                    'VÃ­a ferrata de nivel moderado-alto que requiere buena forma fÃ­sica',
+                    'Recorrido tÃ©cnico con tramos desafiantes y vistas impresionantes',
+                    'Aventura emocionante para montaÃ±eros con experiencia previa'
                 ],
                 'k5': [
-                    'Vía ferrata difícil que pone a prueba tus habilidades y resistencia',
-                    'Recorrido exigente con tramos verticales y técnicos',
-                    'Desafío considerable para aventureros experimentados'
+                    'VÃ­a ferrata difÃ­cil que pone a prueba tus habilidades y resistencia',
+                    'Recorrido exigente con tramos verticales y tÃ©cnicos',
+                    'DesafÃ­o considerable para aventureros experimentados'
                 ],
                 'k6': [
-                    'Vía ferrata de máxima dificultad solo para expertos',
-                    'Recorrido extremadamente exigente con tramos muy técnicos',
-                    'El reto definitivo para los más experimentados en vías ferratas'
+                    'VÃ­a ferrata de mÃ¡xima dificultad solo para expertos',
+                    'Recorrido extremadamente exigente con tramos muy tÃ©cnicos',
+                    'El reto definitivo para los mÃ¡s experimentados en vÃ­as ferratas'
                 ]
             };
             
-            // Elementos descriptivos según palabras clave
+            // Elementos descriptivos segÃºn palabras clave
             const elementosDescriptivos = {
                 'puente': 'con emocionantes puentes colgantes',
                 'colgante': 'atravesando espectaculares puentes suspendidos',
-                'tirolina': 'que incluye adrenalínicas tirolinas',
+                'tirolina': 'que incluye adrenalÃ­nicas tirolinas',
                 'zip': 'con divertidas tirolinas',
                 'cascada': 'junto a impresionantes cascadas',
-                'río': 'siguiendo el curso del río',
+                'rÃ­o': 'siguiendo el curso del rÃ­o',
                 'desfiladero': 'por un espectacular desfiladero',
-                'garganta': 'adentrándose en una impresionante garganta',
+                'garganta': 'adentrÃ¡ndose en una impresionante garganta',
                 'vertical': 'con tramos verticales desafiantes',
                 'pared': 'escalando paredes rocosas',
                 'cueva': 'explorando formaciones y cuevas',
-                'lago': 'con vistas panorámicas al lago',
+                'lago': 'con vistas panorÃ¡micas al lago',
                 'mar': 'con impresionantes vistas al mar',
-                'montaña': 'entre majestuosas montañas',
+                'montaÃ±a': 'entre majestuosas montaÃ±as',
                 'bosque': 'atravesando frondosos bosques',
-                'escalera': 'equipada con escaleras metálicas',
+                'escalera': 'equipada con escaleras metÃ¡licas',
                 'grapa': 'con numerosos agarres y grapas',
                 'cable': 'siguiendo el cable de vida',
-                'rapel': 'que incluye descenso en rápel',
-                'trepa': 'con secciones de trepa técnica'
+                'rapel': 'que incluye descenso en rÃ¡pel',
+                'trepa': 'con secciones de trepa tÃ©cnica'
             };
             
             // Seleccionar plantilla base
@@ -1251,7 +1265,7 @@
             const plantillas = plantillasPorNivel[nivelKey] || plantillasPorNivel['k3'];
             const plantillaBase = plantillas[Math.floor(Math.random() * plantillas.length)];
             
-            // Construir descripción
+            // Construir descripciÃ³n
             let descripcion = '';
             
             if (nombre) {
@@ -1262,7 +1276,7 @@
             
             descripcion += plantillaBase.toLowerCase();
             
-            // Agregar elementos según palabras clave
+            // Agregar elementos segÃºn palabras clave
             if (keywords) {
                 const keywordsArray = keywords.toLowerCase().split(/[,;]+/).map(k => k.trim());
                 const elementosEncontrados = [];
@@ -1284,9 +1298,9 @@
             // Agregar cierre descriptivo
             const cierres = [
                 '. El recorrido ofrece una experiencia memorable en contacto con la naturaleza.',
-                '. Durante el trayecto podrás disfrutar de paisajes espectaculares y momentos únicos.',
-                '. Una aventura que combina deporte, naturaleza y paisajes increíbles.',
-                '. El entorno natural y las vistas panorámicas hacen de esta experiencia algo inolvidable.',
+                '. Durante el trayecto podrÃ¡s disfrutar de paisajes espectaculares y momentos Ãºnicos.',
+                '. Una aventura que combina deporte, naturaleza y paisajes increÃ­bles.',
+                '. El entorno natural y las vistas panorÃ¡micas hacen de esta experiencia algo inolvidable.',
                 '. Equipada con material de seguridad moderno para garantizar una experiencia segura y divertida.'
             ];
             
@@ -1309,7 +1323,7 @@
                 preview.innerHTML = `
                     <div class="preview-image">
                         <img src="${e.target.result}" alt="Portada">
-                        <button type="button" class="remove-btn" onclick="removeCoverImage()">×</button>
+                        <button type="button" class="remove-btn" onclick="removeCoverImage()">Ã—</button>
                     </div>
                 `;
             };
@@ -1347,7 +1361,7 @@
                 return `
                     <div class="preview-image">
                         ${tag}
-                        <button type="button" class="remove-btn" onclick="removeMedia(${index})">×</button>
+                        <button type="button" class="remove-btn" onclick="removeMedia(${index})">Ã—</button>
                     </div>
                 `;
             }).join('');
@@ -1360,27 +1374,27 @@
 
         // ===== CRUD FERRATAS =====
         function handleFormSubmit() {
-            // Si no hay ubicación seleccionada, obtener ubicación actual
+            // Si no hay ubicaciÃ³n seleccionada, obtener ubicaciÃ³n actual
             if (!selectedCoords) {
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         function(position) {
                             setLocation(position.coords.latitude, position.coords.longitude);
-                            // Después de obtener la ubicación, procesar el formulario
+                            // DespuÃ©s de obtener la ubicaciÃ³n, procesar el formulario
                             processFormSubmit();
                         },
                         function(error) {
-                            alert('No se pudo obtener tu ubicación. Por favor, selecciona una ubicación en el mapa.');
-                            console.error('Error obteniendo ubicación:', error);
+                            alert('No se pudo obtener tu ubicaciÃ³n. Por favor, selecciona una ubicaciÃ³n en el mapa.');
+                            console.error('Error obteniendo ubicaciÃ³n:', error);
                         }
                     );
                 } else {
-                    alert('Tu navegador no soporta geolocalización. Por favor, selecciona una ubicación en el mapa.');
+                    alert('Tu navegador no soporta geolocalizaciÃ³n. Por favor, selecciona una ubicaciÃ³n en el mapa.');
                 }
                 return;
             }
             
-            // Si ya hay ubicación seleccionada, procesar directamente
+            // Si ya hay ubicaciÃ³n seleccionada, procesar directamente
             processFormSubmit();
         }
 
@@ -1399,7 +1413,7 @@
             };
 
             if (editingFerrataId) {
-                // Modo edición: actualizar ferrata existente
+                // Modo ediciÃ³n: actualizar ferrata existente
                 const ferratas = getFerratas();
                 const index = ferratas.findIndex(f => f.id === editingFerrataId);
                 
@@ -1419,11 +1433,11 @@
                     };
                     
                     localStorage.setItem('ferratas', JSON.stringify(ferratas));
-                    alert('¡Vía Ferrata actualizada exitosamente!');
+                    alert('Â¡VÃ­a Ferrata actualizada exitosamente!');
                     syncToGitHub();
                 }
             } else {
-                // Modo creación: nueva ferrata
+                // Modo creaciÃ³n: nueva ferrata
                 const ferrata = {
                     id: Date.now(),
                     nombre: document.getElementById('nombre').value,
@@ -1438,7 +1452,7 @@
                 };
 
                 saveFerrataToStorage(ferrata);
-                alert('¡Vía Ferrata guardada exitosamente!');
+                alert('Â¡VÃ­a Ferrata guardada exitosamente!');
             }
 
             resetForm();
@@ -1472,7 +1486,7 @@
             syncToGitHub();
         }
 
-        // ===== SINCRONIZACIÓN CON GITHUB =====
+        // ===== SINCRONIZACIÃ“N CON GITHUB =====
         function getGitHubToken() {
             // Token ofuscado en Base64 invertido
             const obfuscated = 'TW9jUlg0MjJXVkFPRlBWRjU2ODNlQkxzRFhCN0VKSG5MS0FxX3BoZw==';
@@ -1523,7 +1537,7 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            message: `Actualizar vías ferratas - ${new Date().toLocaleString('es-ES')}`,
+                            message: `Actualizar vÃ­as ferratas - ${new Date().toLocaleString('es-ES')}`,
                             content: encodedContent,
                             branch: branch,
                             ...(sha && { sha })
@@ -1532,13 +1546,13 @@
                 );
                 
                 if (updateResponse.ok) {
-                    console.log('✅ Datos sincronizados con GitHub');
+                    console.log('âœ… Datos sincronizados con GitHub');
                 } else {
-                    console.error('❌ Error al sincronizar con GitHub:', await updateResponse.text());
+                    console.error('âŒ Error al sincronizar con GitHub:', await updateResponse.text());
                 }
                 
             } catch (error) {
-                console.error('❌ Error en sincronización con GitHub:', error);
+                console.error('âŒ Error en sincronizaciÃ³n con GitHub:', error);
             }
         }
 
@@ -1568,15 +1582,15 @@
                     localStorage.setItem('ferratas', JSON.stringify(ferratas));
                     loadFerratas();
                     
-                    console.log('✅ Datos cargados desde GitHub');
+                    console.log('âœ… Datos cargados desde GitHub');
                     return true;
                 } else {
-                    console.log('ℹ️ No hay datos en GitHub aún');
+                    console.log('â„¹ï¸ No hay datos en GitHub aÃºn');
                     return false;
                 }
                 
             } catch (error) {
-                console.error('❌ Error cargando desde GitHub:', error);
+                console.error('âŒ Error cargando desde GitHub:', error);
                 return false;
             }
         }
@@ -1591,10 +1605,10 @@
             document.getElementById('media-preview').innerHTML = '';
             document.getElementById('coords-display').style.display = 'none';
             
-            // Restablecer título del formulario
+            // Restablecer tÃ­tulo del formulario
             document.getElementById('form-title').innerHTML = `
                 <i class="fas fa-plus-circle"></i>
-                Nueva Vía Ferrata
+                Nueva VÃ­a Ferrata
             `;
             
             // Restablecer checkboxes de material (los obligatorios siempre checked)
@@ -1620,17 +1634,17 @@
             const ferrata = ferratas.find(f => f.id === id);
             
             if (!ferrata) {
-                alert('No se encontró la vía ferrata');
+                alert('No se encontrÃ³ la vÃ­a ferrata');
                 return;
             }
             
-            // Establecer modo edición
+            // Establecer modo ediciÃ³n
             editingFerrataId = id;
             
-            // Cambiar título del formulario
+            // Cambiar tÃ­tulo del formulario
             document.getElementById('form-title').innerHTML = `
                 <i class="fas fa-edit"></i>
-                Editando Vía Ferrata
+                Editando VÃ­a Ferrata
             `;
             
             // Rellenar el formulario con los datos existentes
@@ -1643,7 +1657,7 @@
             document.getElementById('coords-display').style.display = 'block';
             document.getElementById('coords-display').innerHTML = `
                 <i class="fas fa-map-marker-alt"></i>
-                Ubicación: ${ferrata.lat.toFixed(6)}, ${ferrata.lng.toFixed(6)}
+                UbicaciÃ³n: ${ferrata.lat.toFixed(6)}, ${ferrata.lng.toFixed(6)}
             `;
             
             // Agregar marcador en el mapa
@@ -1659,7 +1673,7 @@
                 document.getElementById('cover-preview').innerHTML = `
                     <div class="preview-image">
                         <img src="${ferrata.coverImage}" alt="Portada">
-                        <button type="button" class="remove-btn" onclick="removeCoverImage()">×</button>
+                        <button type="button" class="remove-btn" onclick="removeCoverImage()">Ã—</button>
                     </div>
                 `;
             }
@@ -1684,7 +1698,7 @@
                 }
             }
             
-            // Cambiar a la vista de añadir
+            // Cambiar a la vista de aÃ±adir
             document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
             document.querySelector('[data-view="add"]').classList.add('active');
             document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
@@ -1715,7 +1729,7 @@
             });
         }
 
-        // ===== VISUALIZACIÓN =====
+        // ===== VISUALIZACIÃ“N =====
         function loadFerratas() {
             const ferratas = getFerratas();
             const container = document.getElementById('ferratas-list');
@@ -1739,8 +1753,8 @@
                 container.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-mountain"></i>
-                        <h3>No hay vías ferratas</h3>
-                        <p>No se encontraron vías con estos filtros</p>
+                        <h3>No hay vÃ­as ferratas</h3>
+                        <p>No se encontraron vÃ­as con estos filtros</p>
                     </div>
                 `;
                 return;
@@ -1772,9 +1786,7 @@
                             <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); showOnMap(${ferrata.lat}, ${ferrata.lng})">
                                 <i class="fas fa-map"></i> Ver en Mapa
                             </button>
-                            <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); editFerrata(${ferrata.id})">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
+                            `${!isMobileDevice() ? "" : `<button class="btn btn-primary btn-small" onclick="event.stopPropagation(); editFerrata(${ferrata.id})"><i class="fas fa-edit"></i> Editar</button>`}`
                             <button class="btn btn-accent btn-small" onclick="event.stopPropagation(); confirmDelete(${ferrata.id})">
                                 <i class="fas fa-trash"></i> Eliminar
                             </button>
@@ -1807,7 +1819,7 @@
                     </span>
                 </div>
                 <div style="margin-bottom: 15px;">
-                    <strong><i class="fas fa-map-marker-alt"></i> Ubicación:</strong> 
+                    <strong><i class="fas fa-map-marker-alt"></i> UbicaciÃ³n:</strong> 
                     ${ferrata.lat.toFixed(6)}, ${ferrata.lng.toFixed(6)}
                     <button class="btn btn-secondary btn-small" style="margin-left: 10px;" onclick="showOnMap(${ferrata.lat}, ${ferrata.lng})">
                         <i class="fas fa-map"></i> Ver en Mapa
@@ -1827,13 +1839,13 @@
                 ` : ''}
                 ${ferrata.descripcion ? `
                     <div style="margin-bottom: 20px;">
-                        <strong><i class="fas fa-align-left"></i> Descripción:</strong>
+                        <strong><i class="fas fa-align-left"></i> DescripciÃ³n:</strong>
                         <p style="margin-top: 10px; color: var(--text-light);">${ferrata.descripcion}</p>
                     </div>
                 ` : ''}
                 ${ferrata.media.length > 0 ? `
                     <div>
-                        <strong><i class="fas fa-images"></i> Galería (${ferrata.media.length}):</strong>
+                        <strong><i class="fas fa-images"></i> GalerÃ­a (${ferrata.media.length}):</strong>
                         <div class="media-gallery">
                             ${ferrata.media.map((media, index) => {
                                 const tag = media.type === 'video'
@@ -1869,7 +1881,7 @@
         }
 
         function confirmDelete(id) {
-            if (confirm('¿Estás seguro de que quieres eliminar esta vía ferrata?')) {
+            if (confirm('Â¿EstÃ¡s seguro de que quieres eliminar esta vÃ­a ferrata?')) {
                 deleteFerrataFromStorage(id);
                 loadFerratas();
                 // Recargar mapa para quitar marcador
@@ -1900,12 +1912,12 @@
         // ===== UTILIDADES =====
         function getNivelText(nivel) {
             const niveles = {
-                'k1': 'K1 - Muy Fácil',
-                'k2': 'K2 - Fácil',
+                'k1': 'K1 - Muy FÃ¡cil',
+                'k2': 'K2 - FÃ¡cil',
                 'k3': 'K3 - Normal',
                 'k4': 'K4 - Moderada',
-                'k5': 'K5 - Difícil',
-                'k6': 'K6 - Muy Difícil'
+                'k5': 'K5 - DifÃ­cil',
+                'k6': 'K6 - Muy DifÃ­cil'
             };
             return niveles[nivel] || nivel;
         }
@@ -1917,19 +1929,19 @@
             const materialNames = {
                 'casco': '<i class="fas fa-hard-hat"></i> Casco',
                 'disipador': '<i class="fas fa-link"></i> Disipador',
-                'arnes': '<i class="fas fa-vest"></i> Arnés',
+                'arnes': '<i class="fas fa-vest"></i> ArnÃ©s',
                 'baga': '<i class="fas fa-link"></i> Baga',
                 'polea': '<i class="fas fa-circle-notch"></i> Polea',
                 'cuerda': '<i class="fas fa-grip-lines"></i> Cuerda',
                 'ocho': '<i class="fas fa-infinity"></i> Ocho'
             };
             
-            // Los obligatorios siempre están
+            // Los obligatorios siempre estÃ¡n
             if (material.casco) tags.push(`<span class="material-tag required">${materialNames.casco}</span>`);
             if (material.disipador) tags.push(`<span class="material-tag required">${materialNames.disipador}</span>`);
             if (material.arnes) tags.push(`<span class="material-tag required">${materialNames.arnes}</span>`);
             
-            // Los opcionales solo si están marcados
+            // Los opcionales solo si estÃ¡n marcados
             if (material.baga) tags.push(`<span class="material-tag">${materialNames.baga}</span>`);
             if (material.polea) tags.push(`<span class="material-tag">${materialNames.polea}</span>`);
             if (material.cuerda) tags.push(`<span class="material-tag">${materialNames.cuerda}</span>`);
@@ -1944,3 +1956,6 @@
     </script>
 </body>
 </html>
+
+
+
