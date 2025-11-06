@@ -1,4 +1,4 @@
-// Configuración y constantes globales - v1.4.0
+// Configuración y constantes globales - v1.5.0
 // ===== CONFIGURACIÓN GITHUB =====
 const githubRepo = 'Suwert8/pmm-vias-ferratas';
 const githubFilePath = 'data/ferratas.json';
@@ -53,7 +53,7 @@ function formatDuration(minutes) {
 }
 
 // ===== CONFIGURACIÓN INICIAL =====
-console.log('🔧 CONFIG CARGADO - Versión 1.4.0');
+console.log('🔧 CONFIG CARGADO - Versión 1.5.0');
 console.log('🔗 Repositorio:', githubRepo);
 console.log('📁 Archivo:', githubFilePath);
 console.log('🌿 Rama:', githubBranch);

@@ -1,4 +1,4 @@
-// Gestión de ferratas - v1.4.0
+// Gestión de ferratas - v1.5.0
 
 // ===== GESTIÓN DE FERRATAS =====
 async function loadFerratas(forceReload = false) {
@@ -418,4 +418,4 @@ function applyFilter() {
     }
 }
 
-console.log('🏔️ FERRATAS MODULE CARGADO - v1.4.0');
+console.log('🏔️ FERRATAS MODULE CARGADO - v1.5.0');

@@ -1,4 +1,4 @@
-// Funciones del mapa - v1.4.0
+// Funciones del mapa - v1.5.0
 
 // ===== FUNCIONES DEL MAPA =====
 async function initMap() {
@@ -148,4 +148,4 @@ function enableMapSelection() {
     }
 }
 
-console.log('🗺️ MAP MODULE CARGADO - v1.4.0');
+console.log('🗺️ MAP MODULE CARGADO - v1.5.0');

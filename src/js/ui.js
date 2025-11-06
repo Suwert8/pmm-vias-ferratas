@@ -1,4 +1,4 @@
-// Interfaz de usuario y formularios - v1.4.0
+// Interfaz de usuario y formularios - v1.5.0
 
 // ===== GESTIÓN DE FORMULARIOS =====
 async function handleFormSubmit(event) {
@@ -383,4 +383,4 @@ function toggleView(viewName) {
     }
 }
 
-console.log('🎨 UI MODULE CARGADO - v1.4.0');
+console.log('🎨 UI MODULE CARGADO - v1.5.0');

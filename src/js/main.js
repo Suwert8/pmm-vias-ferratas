@@ -2,12 +2,13 @@
 
 // ===== INICIALIZACIÓN PRINCIPAL =====
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('🚀 JAVASCRIPT INICIADO - Versión 1.4.0');
-    console.log('🆕 NUEVA VERSIÓN 1.4.0: Aplicación modularizada');
+    console.log('🚀 JAVASCRIPT INICIADO - Versión 1.5.0');
+    console.log('🆕 NUEVA VERSIÓN 1.5.0: Aplicación modularizada');
     console.log('📋 Cambios principales:');
     console.log('   ✅ Estructura modular con archivos separados');
     console.log('   ✅ CSS extraído a archivos independientes');
     console.log('   ✅ JavaScript dividido en módulos lógicos');
+    console.log('   ✅ Meta tags PWA actualizadas');
     console.log('   ✅ Mejor mantenibilidad y escalabilidad');
     console.log('   ✅ Prevención de errores de recursión mejorada');
     console.log('🌐 URL actual:', window.location.href);
@@ -97,6 +98,6 @@ window.mediaFiles = mediaFiles;
 window.selectingOnMap = selectingOnMap;
 window.currentFilter = currentFilter;
 
-console.log('🎯 MAIN MODULE CARGADO - v1.4.0');
+console.log('🎯 MAIN MODULE CARGADO - v1.5.0');
 console.log('🌍 Funciones globales exportadas para compatibilidad HTML');
 console.log('📦 Variables globales accesibles desde window');
