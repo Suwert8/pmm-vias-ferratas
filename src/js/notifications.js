@@ -1,4 +1,4 @@
-// Sistema de notificaciones modernas - v1.5.1
+// Sistema de notificaciones modernas
 
 // ===== SISTEMA DE NOTIFICACIONES =====
 function showNotification(message, type = 'info', title = null, duration = 5000) {

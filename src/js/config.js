@@ -1,4 +1,7 @@
-// Configuración y constantes globales - v1.5.1
+// Configuración y constantes globales
+// ===== VERSIÓN DE LA APLICACIÓN =====
+const APP_VERSION = '1.5.1';
+
 // ===== CONFIGURACIÓN GITHUB =====
 const githubRepo = 'Suwert8/pmm-vias-ferratas';
 const githubFilePath = 'data/ferratas.json';
@@ -52,5 +55,14 @@ function formatDuration(minutes) {
     return minutes + ' min';
 }
 
+// ===== UTILIDADES DE VERSIÓN =====
+function getAppVersion() {
+    return APP_VERSION;
+}
+
+function getFullVersionString() {
+    return `Vías Ferratas v${APP_VERSION}`;
+}
+
 // ===== CONFIGURACIÓN INICIAL =====
-console.log('🔧 CONFIG v1.5.1 - Repositorio:', githubRepo);
+console.log(`🔧 CONFIG v${APP_VERSION} - Repositorio:`, githubRepo);

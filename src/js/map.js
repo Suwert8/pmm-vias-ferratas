@@ -1,4 +1,4 @@
-// Funciones del mapa - v1.5.1
+// Funciones del mapa
 
 // ===== FUNCIONES DEL MAPA =====
 async function initMap() {
@@ -146,4 +146,4 @@ function enableMapSelection() {
     }
 }
 
-// Módulo de mapas - v1.5.1
+// Módulo de mapas

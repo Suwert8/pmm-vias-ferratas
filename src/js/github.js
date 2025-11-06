@@ -1,4 +1,4 @@
-// Funciones de GitHub - v1.5.1
+// Funciones de GitHub
 
 // ===== FUNCIONES GITHUB =====
 async function configureGitHubToken() {
@@ -289,4 +289,4 @@ async function reloadGitHub() {
     }
 }
 
-// Módulo GitHub - v1.5.1
+// Módulo GitHub

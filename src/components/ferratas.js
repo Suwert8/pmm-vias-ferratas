@@ -1,4 +1,4 @@
-// Gestión de ferratas - v1.5.1
+// Gestión de ferratas
 
 // ===== GESTIÓN DE FERRATAS =====
 async function loadFerratas(forceReload = false) {
@@ -417,4 +417,4 @@ function applyFilter() {
     }
 }
 
-// Gestión de ferratas - v1.5.1
+// Gestión de ferratas

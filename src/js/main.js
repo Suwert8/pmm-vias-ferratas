@@ -1,8 +1,11 @@
-// Archivo principal de inicialización - v1.5.1
+// Archivo principal de inicialización
 
 // ===== INICIALIZACIÓN PRINCIPAL =====
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('🚀 Vías Ferratas v1.5.1 - Iniciando aplicación...');
+    console.log(`🚀 Vías Ferratas v${APP_VERSION} - Iniciando aplicación...`);
+    
+    // Actualizar título del documento con la versión
+    document.title = `Vías Ferratas - v${APP_VERSION}`;
     
     // Verificar elementos críticos
     const container = document.getElementById('container');

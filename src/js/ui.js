@@ -1,4 +1,4 @@
-// Interfaz de usuario y formularios - v1.5.1
+// Interfaz de usuario y formularios
 
 // ===== GESTIÓN DE FORMULARIOS =====
 async function handleFormSubmit(event) {
@@ -381,4 +381,4 @@ function toggleView(viewName) {
     }
 }
 
-// Interfaz de usuario - v1.5.1
+// Interfaz de usuario
