@@ -13,5 +13,21 @@
     "coverImage": null,
     "mediaFiles": [],
     "fechaModificacion": "2025-11-06T20:34:15.218Z"
+  },
+  {
+    "id": "mhnvyknlmtucfkjvqe9",
+    "nombre": "prueba editada",
+    "ubicacion": "Cantabria",
+    "nivel": "k4",
+    "duracion": 120,
+    "descripcion": "La vía ferrata \"prueba editada\" en Cantabria es una ruta de nivel K4 - Difícil. Esta ferrata ofrece una experiencia emocionante con vistas espectaculares y desafíos técnicos apropiados para su nivel de dificultad. Se recomienda llevar el equipamiento adecuado y verificar las condiciones meteorológicas antes de la ascensión.",
+    "equipamiento": "",
+    "observaciones": "",
+    "lat": 43.44444442419639,
+    "lng": -3.924522399902344,
+    "coverImage": null,
+    "mediaFiles": [],
+    "fechaCreacion": "2025-11-06T20:35:13.041Z",
+    "fechaModificacion": "2025-11-06T20:35:13.041Z"
   }
 ]
