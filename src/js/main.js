@@ -2,7 +2,7 @@
 
 // ===== INICIALIZACIÓN PRINCIPAL =====
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log(`🚀 Vías Ferratas v${APP_VERSION} - Iniciando aplicación...`);
+    // console.log(`🚀 Vías Ferratas v${APP_VERSION} - Iniciando aplicación...`);
     
     // Actualizar título del documento con la versión
     document.title = `Vías Ferratas - v${APP_VERSION}`;
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         setupEventListeners();
         setupMobileNavigation();
         
-        console.log('✅ Aplicación inicializada correctamente');
+        // console.log('✅ Aplicación inicializada correctamente');
     } catch (error) {
         console.error('❌ ERROR EN INICIALIZACIÓN:', error);
         if (typeof showError === 'function') {

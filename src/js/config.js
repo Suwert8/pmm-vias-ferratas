@@ -65,4 +65,4 @@ function getFullVersionString() {
 }
 
 // ===== CONFIGURACIÓN INICIAL =====
-console.log(`🔧 CONFIG v${APP_VERSION} - Repositorio:`, githubRepo);
+// console.log(`🔧 CONFIG v${APP_VERSION} - Repositorio:`, githubRepo);

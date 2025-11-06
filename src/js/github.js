@@ -110,7 +110,7 @@ async function loadFromGitHub() {
                 throw new Error('El contenido no es un array válido');
             }
             
-            console.log(`✅ ${ferratas.length} ferratas cargadas desde GitHub`);
+            // console.log(`✅ ${ferratas.length} ferratas cargadas desde GitHub`);
             return ferratas;
             
         } catch (parseError) {
@@ -245,7 +245,7 @@ async function saveToGitHub(newData = null, operation = 'sync', retryCount = 0) 
             throw new Error(`HTTP ${putResponse.status}: ${JSON.stringify(errorData, null, 2)}`);
         }
 
-        console.log('✅ Datos guardados en GitHub correctamente');
+        // console.log('✅ Datos guardados en GitHub correctamente');
         
         // Actualizar variable global y renderizar
         ferratas = updatedFerratas;
@@ -267,10 +267,10 @@ async function saveToGitHub(newData = null, operation = 'sync', retryCount = 0) 
 
 async function reloadGitHub() {
     try {
-        console.log('🔄 Iniciando recarga desde GitHub...');
+        // console.log('🔄 Iniciando recarga desde GitHub...');
         
         // Cargar datos frescos desde GitHub y actualizar interfaz
-        console.log('📥 Cargando datos desde GitHub...');
+        // console.log('📥 Cargando datos desde GitHub...');
         const loadedFerratas = await loadFromGitHub();
         if (loadedFerratas) {
             // Actualizar variable global y renderizar

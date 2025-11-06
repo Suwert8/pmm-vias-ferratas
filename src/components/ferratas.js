@@ -9,7 +9,7 @@ async function loadFerratas(forceReload = false) {
             ferratas = loadedFerratas || []; // Actualizar variable global
         } else {
             // Usar datos en memoria
-            console.log(`📋 Usando ferratas en memoria: ${ferratas.length} ferratas`);
+            // console.log(`📋 Usando ferratas en memoria: ${ferratas.length} ferratas`);
         }
         
         renderFerratas(ferratas);
@@ -97,11 +97,11 @@ async function saveFerrataToStorage(ferrata) {
     try {
         if (editingFerrataId) {
             // Modo edición: actualizar ferrata existente
-            console.log(`📝 Actualizando ferrata ID ${editingFerrataId}...`);
+            // console.log(`📝 Actualizando ferrata ID ${editingFerrataId}...`);
             ferrata.id = editingFerrataId; // Mantener el ID original
             
             // USAR DATOS EN MEMORIA PARA EVITAR RECURSIÓN
-            console.log(`🔄 Usando datos en memoria para actualización: ${ferratas.length} ferratas existentes`);
+            // console.log(`🔄 Usando datos en memoria para actualización: ${ferratas.length} ferratas existentes`);
             const currentFerratas = [...ferratas]; // Copia de los datos en memoria
             const index = currentFerratas.findIndex(f => f.id === editingFerrataId);
             
@@ -113,7 +113,7 @@ async function saveFerrataToStorage(ferrata) {
             const result = await saveToGitHub(currentFerratas, 'sync');
             
             if (result) {
-                console.log('✅ Ferrata actualizada correctamente');
+                // console.log('✅ Ferrata actualizada correctamente');
                 editingFerrataId = null; // Salir del modo edición
                 
                 // Restaurar texto del botón
@@ -135,12 +135,12 @@ async function saveFerrataToStorage(ferrata) {
                 }
             }
         } else {
-            // Modo creación: añadir nueva ferrata
-            console.log('📝 Creando nueva ferrata...');
+            // Modo creación: nueva ferrata
+            // console.log('📝 Creando nueva ferrata...');
             const result = await saveToGitHub([ferrata], 'add');
             
             if (result) {
-                console.log('✅ Nueva ferrata creada correctamente');
+                // console.log('✅ Nueva ferrata creada correctamente');
             }
         }
     } catch (error) {

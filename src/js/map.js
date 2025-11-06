@@ -27,7 +27,7 @@ async function initMap() {
         
         // Obtener ubicación actual al inicializar
         if (navigator.geolocation) {
-            console.log('📍 Obteniendo ubicación actual...');
+            // console.log('📍 Obteniendo ubicación actual...');
             updateLocationStatus('Obteniendo ubicación...', 'loading');
             
             navigator.geolocation.getCurrentPosition(
@@ -36,7 +36,7 @@ async function initMap() {
                     map.setView([latitude, longitude], 10);
                     setSelectedCoords(latitude, longitude);
                     updateLocationStatus('Ubicación obtenida', 'success');
-                    console.log('✅ Ubicación obtenida:', latitude, longitude);
+                    // console.log('✅ Ubicación obtenida:', latitude, longitude);
                 },
                 (error) => {
                     console.warn('⚠️ Error al obtener ubicación:', error.message);
@@ -51,7 +51,7 @@ async function initMap() {
                 }
             );
         } else {
-            console.log('📍 Geolocalización no disponible, usando ubicación por defecto');
+            // console.log('📍 Geolocalización no disponible, usando ubicación por defecto');
             setSelectedCoords(40.4168, -3.7038);
             updateLocationStatus('Usar ubicación por defecto', 'error');
         }
@@ -59,7 +59,7 @@ async function initMap() {
         // Cargar marcadores existentes
         loadMarkersOnMap();
         
-        console.log('✅ Mapa inicializado correctamente');
+        // console.log('✅ Mapa inicializado correctamente');
     } catch (error) {
         console.error('❌ Error al inicializar mapa:', error.message);
         if (typeof showError === 'function') {
@@ -90,7 +90,7 @@ function setSelectedCoords(lat, lng) {
         `;
     }
     
-    console.log('📍 Coordenadas seleccionadas:', lat, lng);
+    // console.log('📍 Coordenadas seleccionadas:', lat, lng);
 }
 
 function updateLocationStatus(message, type = 'loading') {

@@ -11,7 +11,7 @@ async function handleFormSubmit(event) {
     }
     
     isSubmitting = true;
-    console.log('📝 Iniciando envío de formulario...');
+    // console.log('📝 Iniciando envío de formulario...');
     
     try {
         const formData = new FormData(event.target);
@@ -48,7 +48,7 @@ async function handleFormSubmit(event) {
             fechaModificacion: new Date().toISOString()
         };
         
-        console.log('📋 Datos del formulario:', ferrata);
+        // console.log('📋 Datos del formulario:', ferrata);
         
         // Guardar ferrata
         await saveFerrataToStorage(ferrata);
@@ -94,7 +94,7 @@ async function handleFormSubmit(event) {
             );
         }
         
-        console.log('✅ handleFormSubmit completado');
+        // console.log('✅ handleFormSubmit completado');
         
     } catch (error) {
         console.error('❌ Error en formulario:', error.message);
@@ -133,7 +133,7 @@ function setupMobileNavigation() {
                 }, 100);
             }
             
-            console.log(`📱 Vista cambiada a: ${targetView}`);
+            // console.log(`📱 Vista cambiada a: ${targetView}`);
         });
     });
 }
