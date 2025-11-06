@@ -1,58 +1,31 @@
-// Archivo principal de inicialización - v1.4.0
+// Archivo principal de inicialización - v1.5.1
 
 // ===== INICIALIZACIÓN PRINCIPAL =====
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('🚀 JAVASCRIPT INICIADO - Versión 1.5.0');
-    console.log('🆕 NUEVA VERSIÓN 1.5.0: Aplicación modularizada');
-    console.log('📋 Cambios principales:');
-    console.log('   ✅ Estructura modular con archivos separados');
-    console.log('   ✅ CSS extraído a archivos independientes');
-    console.log('   ✅ JavaScript dividido en módulos lógicos');
-    console.log('   ✅ Meta tags PWA actualizadas');
-    console.log('   ✅ Mejor mantenibilidad y escalabilidad');
-    console.log('   ✅ Prevención de errores de recursión mejorada');
-    console.log('🌐 URL actual:', window.location.href);
-    console.log('📱 User Agent:', navigator.userAgent);
+    console.log('🚀 Vías Ferratas v1.5.1 - Iniciando aplicación...');
     
-    // Verificar que el body contiene elementos
-    console.log('📋 Verificando estructura HTML...');
-    console.log('📊 Elementos en body:', document.body.children.length);
-    console.log('🎯 Container principal:', document.getElementById('container') ? '✅ Encontrado' : '❌ No encontrado');
-    console.log('🗺️ Div del mapa:', document.getElementById('map') ? '✅ Encontrado' : '❌ No encontrado');
-    console.log('📝 Formulario:', document.getElementById('ferrata-form') ? '✅ Encontrado' : '❌ No encontrado');
+    // Verificar elementos críticos
+    const container = document.getElementById('container');
+    const mapDiv = document.getElementById('map');
+    const form = document.getElementById('ferrata-form');
+    
+    if (!container) console.error('❌ Container principal no encontrado');
+    if (!mapDiv) console.error('❌ Div del mapa no encontrado');
+    if (!form) console.error('❌ Formulario no encontrado');
     
     if (document.body.children.length === 0) {
         console.error('❌ ERROR CRÍTICO: El body está vacío!');
         return;
     }
     
-    console.log('⌨️ Atajos de teclado disponibles:');
-    console.log('  Ctrl+Shift+T: Configurar token de GitHub');
-    console.log('  Ctrl+Shift+S: Recarga completa desde GitHub');
-    console.log('  Ctrl+Shift+R: Recargar datos desde GitHub');
-    console.log('');
-    console.log('📄 MODO: Solo GitHub (sin localStorage)');
-    console.log('🔗 Repositorio:', githubRepo);
-    console.log('📁 Archivo:', githubFilePath);
-    console.log('🌿 Rama:', githubBranch);
-    
     try {
-        console.log('🔄 Actualizando estado GitHub...');
-        updateGitHubStatus(); // Actualizar estado de GitHub
-        
-        console.log('🗺️ Inicializando mapa...');
+        updateGitHubStatus();
         await initMap();
-        
-        console.log('📥 Cargando ferratas...');
-        await loadFerratas(); // Cargar datos desde GitHub
-        
-        console.log('🎛️ Configurando event listeners...');
+        await loadFerratas();
         setupEventListeners();
-        
-        console.log('📱 Configurando navegación móvil...');
         setupMobileNavigation();
         
-        console.log('✅ APLICACIÓN INICIALIZADA CORRECTAMENTE');
+        console.log('✅ Aplicación inicializada correctamente');
     } catch (error) {
         console.error('❌ ERROR EN INICIALIZACIÓN:', error);
         if (typeof showError === 'function') {
@@ -72,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 // ===== FUNCIONES GLOBALES PARA COMPATIBILIDAD =====
-// Estas funciones deben estar disponibles globalmente para onclick handlers en HTML
+// Exportar funciones necesarias para onclick handlers en HTML
 
 window.showFerrataDetail = showFerrataDetail;
 window.editFerrata = editFerrata;
@@ -97,7 +70,3 @@ window.coverImageData = coverImageData;
 window.mediaFiles = mediaFiles;
 window.selectingOnMap = selectingOnMap;
 window.currentFilter = currentFilter;
-
-console.log('🎯 MAIN MODULE CARGADO - v1.5.0');
-console.log('🌍 Funciones globales exportadas para compatibilidad HTML');
-console.log('📦 Variables globales accesibles desde window');

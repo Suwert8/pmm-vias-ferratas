@@ -1,9 +1,8 @@
-// Funciones del mapa - v1.5.0
+// Funciones del mapa - v1.5.1
 
 // ===== FUNCIONES DEL MAPA =====
 async function initMap() {
     try {
-        console.log('🗺️ Inicializando mapa...');
         
         map = L.map('map').setView([40.4168, -3.7038], 6); // España
         
@@ -111,7 +110,6 @@ function updateLocationStatus(message, type = 'loading') {
 async function loadMarkersOnMap() {
     try {
         // USAR DATOS EN MEMORIA PARA EVITAR RECURSIÓN
-        console.log(`🗺️ Cargando ${ferratas.length} marcadores en mapa desde memoria`);
         ferratas.forEach(ferrata => {
             const ferrataMarker = L.marker([ferrata.lat, ferrata.lng])
                 .addTo(map)
@@ -148,4 +146,4 @@ function enableMapSelection() {
     }
 }
 
-console.log('🗺️ MAP MODULE CARGADO - v1.5.0');
+// Módulo de mapas - v1.5.1

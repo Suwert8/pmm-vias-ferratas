@@ -1,11 +1,10 @@
-// Gestión de ferratas - v1.5.0
+// Gestión de ferratas - v1.5.1
 
 // ===== GESTIÓN DE FERRATAS =====
 async function loadFerratas(forceReload = false) {
     try {
         if (forceReload || ferratas.length === 0) {
             // Solo recargar desde GitHub si es forzado o no hay datos en memoria
-            console.log('🔄 Cargando ferratas desde GitHub...');
             const loadedFerratas = await loadFromGitHub();
             ferratas = loadedFerratas || []; // Actualizar variable global
         } else {
@@ -418,4 +417,4 @@ function applyFilter() {
     }
 }
 
-console.log('🏔️ FERRATAS MODULE CARGADO - v1.5.0');
+// Gestión de ferratas - v1.5.1

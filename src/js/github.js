@@ -1,4 +1,4 @@
-// Funciones de GitHub - v1.5.0
+// Funciones de GitHub - v1.5.1
 
 // ===== FUNCIONES GITHUB =====
 async function configureGitHubToken() {
@@ -54,7 +54,6 @@ async function loadFromGitHub() {
     }
 
     try {
-        console.log('📥 Cargando ferratas desde GitHub...');
         
         const url = `https://api.github.com/repos/${githubRepo}/contents/${githubFilePath}?ref=${githubBranch}&t=${Date.now()}`;
         const response = await fetch(url, {
@@ -290,4 +289,4 @@ async function reloadGitHub() {
     }
 }
 
-console.log('🐙 GITHUB MODULE CARGADO - v1.5.0');
+// Módulo GitHub - v1.5.1

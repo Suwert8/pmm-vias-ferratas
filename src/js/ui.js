@@ -1,4 +1,4 @@
-// Interfaz de usuario y formularios - v1.5.0
+// Interfaz de usuario y formularios - v1.5.1
 
 // ===== GESTIÓN DE FORMULARIOS =====
 async function handleFormSubmit(event) {
@@ -140,13 +140,11 @@ function setupMobileNavigation() {
 
 // ===== EVENT LISTENERS =====
 function setupEventListeners() {
-    console.log('🎛️ Configurando event listeners...');
     
     // Formulario principal
     const form = document.getElementById('ferrata-form');
     if (form) {
         form.addEventListener('submit', handleFormSubmit);
-        console.log('✅ Event listener del formulario configurado');
     }
     
     // Botón de selección en mapa
@@ -203,7 +201,7 @@ function setupEventListeners() {
     // Atajos de teclado
     document.addEventListener('keydown', handleKeyboardShortcuts);
     
-    console.log('✅ Todos los event listeners configurados');
+    // ✅ Event listeners configurados
 }
 
 function handleKeyboardShortcuts(event) {
@@ -383,4 +381,4 @@ function toggleView(viewName) {
     }
 }
 
-console.log('🎨 UI MODULE CARGADO - v1.5.0');
+// Interfaz de usuario - v1.5.1

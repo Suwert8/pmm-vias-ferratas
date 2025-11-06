@@ -1,4 +1,4 @@
-// Sistema de notificaciones modernas - v1.5.0
+// Sistema de notificaciones modernas - v1.5.1
 
 // ===== SISTEMA DE NOTIFICACIONES =====
 function showNotification(message, type = 'info', title = null, duration = 5000) {
@@ -156,4 +156,4 @@ function showConfirmation(message, title = 'Confirmar acción', confirmText = 'S
     });
 }
 
-console.log('📢 NOTIFICACIONES CARGADAS - v1.5.0');
+// Sistema de notificaciones modernas - v1.5.0
