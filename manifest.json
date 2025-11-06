@@ -2,7 +2,7 @@
   "name": "Vías Ferratas",
   "short_name": "Ferratas",
   "description": "Tu guía personal de vías ferratas",
-  "start_url": "./ferrata-app.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#2c5f2d",
   "theme_color": "#2c5f2d",

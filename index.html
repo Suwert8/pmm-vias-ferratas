@@ -3,55 +3,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="0; url=ferrata-app.html">
-    <title>Vías Ferratas - Redirigiendo...</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #2c5f2d 0%, #1e4620 100%);
-            color: white;
-            text-align: center;
-        }
-        .container {
-            padding: 20px;
-        }
-        h1 {
-            font-size: 2em;
-            margin-bottom: 20px;
-        }
-        .loader {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top: 4px solid white;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        a {
-            color: #97c93d;
-            text-decoration: none;
-            font-weight: bold;
-        }
-    </style>
+    <title>Vías Ferratas - v1.4.0</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Tu guía personal de vías ferratas">
+    <meta name="theme-color" content="#2c5f2d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Vías Ferratas">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="./manifest.json">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    
+    <!-- Estilos CSS Modulares -->
+    <link rel="stylesheet" href="./src/css/styles.css">
+    <link rel="stylesheet" href="./src/css/notifications.css">
 </head>
 <body>
     <div class="container">
-        <h1>🏔️ Vías Ferratas</h1>
-        <div class="loader"></div>
-        <p>Redirigiendo a la aplicación...</p>
-        <p style="margin-top: 20px;">
-            <a href="ferrata-app.html">Si no se redirige automáticamente, haz click aquí</a>
-        </p>
+        <header>
+            <h1>
+                <i class="fas fa-mountain"></i>
+                Vías Ferratas
+            </h1>
+            <p>
+                Tu guía personal
+                <span id="github-status" class="github-status disconnected">
+                    <i class="fas fa-cloud"></i>
+                    <span id="github-status-text">GitHub: No conectado</span>
+                </span>
+            </p>
+        </header>
+
+        <div class="main-content">
+            <!-- Vista: Lista de Ferratas -->
+            <div id="view-list" class="view active">
+                <div class="section">
+                    <h2>
+                        <i class="fas fa-list"></i>
+                        Mis Vías Ferratas
+                    </h2>
+
+                    <div class="filter-section">
+                        <label for="nivel-filter">
+                            <i class="fas fa-filter"></i> Filtrar por nivel:
+                        </label>
+                        <select id="nivel-filter" class="filter-select">
+                            <option value="todas">Todas</option>
+                            <option value="k1">K1 - Muy Fácil</option>
+                            <option value="k2">K2 - Fácil</option>
+                            <option value="k3">K3 - Normal</option>
+                            <option value="k4">K4 - Moderada</option>
+                            <option value="k5">K5 - Difícil</option>
+                            <option value="k6">K6 - Muy Difícil</option>
+                        </select>
+                    </div>
+
+                    <div id="ferratas-list" class="ferratas-list"></div>
+                </div>
+            </div>
+
+            <!-- Vista: Mapa -->
+            <div id="view-map" class="view">
+                <div class="section">
+                    <h2>
+                        <i class="fas fa-map-marked-alt"></i>
+                        Mapa
+                    </h2>
+                    <div id="map"></div>
+                </div>
+            </div>
+
+            <!-- Vista: Añadir Ferrata -->
+            <div id="view-add" class="view">
+                <div class="section">
+                    <h2>
+                        <i class="fas fa-plus-circle"></i>
+                        Añadir Nueva Vía Ferrata
+                    </h2>
+
+                    <form id="ferrata-form" name="ferrata-form">
+                        <div class="form-group">
+                            <label for="nombre">
+                                <i class="fas fa-tag"></i> Nombre
+                            </label>
+                            <input type="text" id="nombre" name="nombre" required placeholder="Ej: Vía Ferrata del Caminito del Rey">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ubicacion">
+                                <i class="fas fa-map-marker-alt"></i> Ubicación
+                            </label>
+                            <input type="text" id="ubicacion" name="ubicacion" placeholder="Ej: Málaga, Andalucía">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nivel">
+                                <i class="fas fa-chart-line"></i> Nivel de Dificultad
+                            </label>
+                            <select id="nivel" name="nivel" required>
+                                <option value="">Selecciona un nivel</option>
+                                <option value="k1">K1 - Muy Fácil</option>
+                                <option value="k2">K2 - Fácil</option>
+                                <option value="k3">K3 - Normal</option>
+                                <option value="k4">K4 - Moderada</option>
+                                <option value="k5">K5 - Difícil</option>
+                                <option value="k6">K6 - Muy Difícil</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="distancia">
+                                <i class="fas fa-route"></i> Distancia (metros)
+                            </label>
+                            <input type="number" id="distancia" name="distancia" placeholder="Ej: 1500">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="duracion">
+                                <i class="fas fa-clock"></i> Duración (minutos)
+                            </label>
+                            <input type="number" id="duracion" name="duracion" placeholder="Ej: 120">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descripcion">
+                                <i class="fas fa-align-left"></i> Descripción
+                            </label>
+                            <textarea id="descripcion" name="descripcion" placeholder="Describe la vía ferrata..."></textarea>
+                            <button type="button" class="btn btn-secondary" id="generate-description" style="margin-top: 10px; width: 100%;">
+                                <i class="fas fa-robot"></i>
+                                Generar Descripción con IA
+                            </button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="equipamiento">
+                                <i class="fas fa-tools"></i> Equipamiento Necesario
+                            </label>
+                            <textarea id="equipamiento" name="equipamiento" placeholder="Ej: Casco, arnés, cabo de anclaje..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="acceso">
+                                <i class="fas fa-car"></i> Cómo Llegar
+                            </label>
+                            <textarea id="acceso" name="acceso" placeholder="Describe cómo llegar al punto de inicio..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="observaciones">
+                                <i class="fas fa-exclamation-triangle"></i> Observaciones
+                            </label>
+                            <textarea id="observaciones" name="observaciones" placeholder="Advertencias, recomendaciones especiales..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-map-pin"></i> Ubicación en Mapa
+                                <span id="location-status" class="location-status">
+                                    <i class="fas fa-spinner fa-spin"></i> Obteniendo ubicación...
+                                </span>
+                            </label>
+                            <div class="location-buttons">
+                                <button type="button" class="btn btn-secondary" id="select-on-map">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Cambiar en Mapa
+                                </button>
+                            </div>
+                            <div id="coords-display" class="coords-display" style="display: none;"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-photo-video"></i> Fotos y Videos
+                            </label>
+                            <div class="file-upload" id="media-upload">
+                                <i class="fas fa-photo-video" style="font-size: 2em; color: var(--accent-color);"></i>
+                                <p>Añadir fotos o videos</p>
+                                <input type="file" id="media-files" accept="image/*,video/*" multiple>
+                            </div>
+                            <div id="media-preview" class="preview-images"></div>
+                        </div>
+
+                        <div class="form-buttons">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                <i class="fas fa-save"></i>
+                                Guardar Vía Ferrata
+                            </button>
+                            <button type="button" id="cancel-edit-btn" class="btn btn-secondary" style="flex: 0 0 auto; margin-left: 10px; display: none;" onclick="cancelEdit()">
+                                <i class="fas fa-times"></i>
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navegación inferior móvil -->
+        <nav class="mobile-nav">
+            <button class="nav-item active" data-view="list">
+                <i class="fas fa-list"></i>
+                <span>Lista</span>
+            </button>
+            <button class="nav-item" data-view="map">
+                <i class="fas fa-map"></i>
+                <span>Mapa</span>
+            </button>
+            <button class="nav-item" data-view="add">
+                <i class="fas fa-plus-circle"></i>
+                <span>Añadir</span>
+            </button>
+        </nav>
     </div>
+
+    <!-- Contenedor de notificaciones -->
+    <div id="notification-container" class="notification-container"></div>
+
+    <!-- Modal para ver detalles -->
+    <div id="detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title"></h2>
+                <button class="modal-close" id="close-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Módulos JavaScript -->
+    <script src="./src/js/config.js"></script>
+    <script src="./src/js/notifications.js"></script>
+    <script src="./src/js/github.js"></script>
+    <script src="./src/js/map.js"></script>
+    <script src="./src/components/ferratas.js"></script>
+    <script src="./src/js/ui.js"></script>
+    <script src="./src/js/main.js"></script>
 </body>
 </html>
