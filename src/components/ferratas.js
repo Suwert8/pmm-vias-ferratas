@@ -77,7 +77,6 @@ function renderFerratas(ferratasList) {
                 <h3 class="ferrata-title">${ferrata.nombre}</h3>
                 <div class="ferrata-info">
                     ${ferrata.duracion ? `<span><i class="fas fa-clock"></i> ${formatDuration(ferrata.duracion)}</span>` : ''}
-                    ${ferrata.distancia ? `<span><i class="fas fa-route"></i> ${formatDistance(ferrata.distancia)}</span>` : ''}
                     ${ferrata.ubicacion ? `<span><i class="fas fa-map-marker-alt"></i> ${ferrata.ubicacion}</span>` : ''}
                 </div>
                 <div class="ferrata-actions" onclick="event.stopPropagation()">
@@ -187,7 +186,6 @@ async function showFerrataDetail(id) {
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
                 ${ferrata.duracion ? `<div><strong><i class="fas fa-clock"></i> Duración:</strong><br>${formatDuration(ferrata.duracion)}</div>` : ''}
-                ${ferrata.distancia ? `<div><strong><i class="fas fa-route"></i> Distancia:</strong><br>${formatDistance(ferrata.distancia)}</div>` : ''}
                 ${ferrata.ubicacion ? `<div><strong><i class="fas fa-map-marker-alt"></i> Ubicación:</strong><br>${ferrata.ubicacion}</div>` : ''}
                 ${ferrata.nivel ? `<div><strong><i class="fas fa-chart-line"></i> Nivel:</strong><br>${getNivelText(ferrata.nivel)}</div>` : ''}
             </div>
@@ -203,13 +201,6 @@ async function showFerrataDetail(id) {
                 <div style="margin-bottom: 20px;">
                     <strong><i class="fas fa-tools"></i> Equipamiento:</strong>
                     <p style="margin-top: 10px; line-height: 1.6;">${ferrata.equipamiento}</p>
-                </div>
-            ` : ''}
-            
-            ${ferrata.acceso ? `
-                <div style="margin-bottom: 20px;">
-                    <strong><i class="fas fa-car"></i> Acceso:</strong>
-                    <p style="margin-top: 10px; line-height: 1.6;">${ferrata.acceso}</p>
                 </div>
             ` : ''}
             
@@ -279,21 +270,17 @@ async function editFerrata(id) {
         const nombreInput = document.getElementById('nombre');
         const ubicacionInput = document.getElementById('ubicacion');
         const nivelSelect = document.getElementById('nivel');
-        const distanciaInput = document.getElementById('distancia');
         const duracionInput = document.getElementById('duracion');
         const descripcionTextarea = document.getElementById('descripcion');
-        const equipamientoTextarea = document.getElementById('equipamiento');
-        const accesoTextarea = document.getElementById('acceso');
+        const equipamientoInput = document.getElementById('equipamiento');
         const observacionesTextarea = document.getElementById('observaciones');
         
         if (nombreInput) nombreInput.value = ferrata.nombre || '';
         if (ubicacionInput) ubicacionInput.value = ferrata.ubicacion || '';
         if (nivelSelect) nivelSelect.value = ferrata.nivel || 'k1';
-        if (distanciaInput) distanciaInput.value = ferrata.distancia || '';
         if (duracionInput) duracionInput.value = ferrata.duracion || '';
         if (descripcionTextarea) descripcionTextarea.value = ferrata.descripcion || '';
-        if (equipamientoTextarea) equipamientoTextarea.value = ferrata.equipamiento || '';
-        if (accesoTextarea) accesoTextarea.value = ferrata.acceso || '';
+        if (equipamientoInput) equipamientoInput.value = ferrata.equipamiento || '';
         if (observacionesTextarea) observacionesTextarea.value = ferrata.observaciones || '';
         
         // Establecer coordenadas
