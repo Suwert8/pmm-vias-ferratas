@@ -1,382 +1,385 @@
-// Interfaz de usuario y formularios
+// Interfaz de usuario: formulario, multimedia, navegación y modales
 
-// ===== GESTIÓN DE FORMULARIOS =====
+let autoLocationRequested = false;
+
+// ===== FORMULARIO =====
 async function handleFormSubmit(event) {
     event.preventDefault();
-    
-    // Prevenir doble envío
-    if (isSubmitting) {
-        console.log('⚠️ Ya hay un envío en progreso...');
+    if (state.submitting) return;
+
+    const form = event.target;
+    const formData = new FormData(form);
+    const nombre = (formData.get('nombre') || '').trim();
+    const nivel = formData.get('nivel');
+
+    if (!nombre) {
+        showWarning('El nombre es obligatorio.');
         return;
     }
-    
-    isSubmitting = true;
-    // console.log('📝 Iniciando envío de formulario...');
-    
+    if (!NIVELES[nivel]) {
+        showWarning('Selecciona un nivel de dificultad.');
+        return;
+    }
+    if (!state.selectedCoords) {
+        showWarning('Selecciona la ubicación: usa "Mi ubicación" o "Elegir en mapa".');
+        return;
+    }
+
+    const isEdit = Boolean(state.editingId);
+    const id = state.editingId || generateId();
+    const duracion = parseInt(formData.get('duracion'), 10);
+    const fields = {
+        nombre,
+        ubicacion: (formData.get('ubicacion') || '').trim(),
+        nivel,
+        duracion: duracion > 0 ? duracion : null,
+        descripcion: (formData.get('descripcion') || '').trim(),
+        equipamiento: (formData.get('equipamiento') || '').trim(),
+        observaciones: (formData.get('observaciones') || '').trim(),
+        lat: state.selectedCoords.lat,
+        lng: state.selectedCoords.lng
+    };
+    const formMedia = state.formMedia.map(item => ({ ...item }));
+
+    setSubmitting(true);
+    const progress = showNotification('Preparando...', 'info', 'Guardando', 0);
+    const setProgress = (text) => {
+        const message = progress?.querySelector('.notification-message');
+        if (message) message.textContent = text;
+    };
+
     try {
-        const formData = new FormData(event.target);
-        
-        // Validar campos requeridos
-        const nombre = formData.get('nombre')?.trim();
-        const nivel = formData.get('nivel');
-        
-        if (!nombre) {
-            throw new Error('El nombre es obligatorio');
-        }
-        
-        if (!selectedCoords) {
-            throw new Error('Debes seleccionar una ubicación en el mapa');
-        }
-        
-        // Crear objeto ferrata
-        const ferrata = {
-            id: editingFerrataId || generateId(),
-            nombre: nombre,
-            ubicacion: formData.get('ubicacion')?.trim() || '',
-            nivel: nivel || 'k1',
-            duracion: parseInt(formData.get('duracion')) || null,
-            descripcion: formData.get('descripcion')?.trim() || '',
-            equipamiento: formData.get('equipamiento')?.trim() || '',
-            observaciones: formData.get('observaciones')?.trim() || '',
-            lat: selectedCoords.lat,
-            lng: selectedCoords.lng,
-            coverImage: coverImageData || null,
-            mediaFiles: [...mediaFiles],
-            fechaCreacion: editingFerrataId ? undefined : new Date().toISOString(),
-            fechaModificacion: new Date().toISOString()
-        };
-        
-        // console.log('📋 Datos del formulario:', ferrata);
-        
-        // Guardar ferrata
-        await saveFerrataToStorage(ferrata);
-        
-        // Resetear formulario solo si es creación exitosa
-        if (!editingFerrataId) {
-            event.target.reset();
-            selectedCoords = null;
-            coverImageData = null;
-            mediaFiles = [];
-            
-            // Limpiar vista previa de imágenes
-            const previewContainer = document.getElementById('media-preview');
-            if (previewContainer) {
-                previewContainer.innerHTML = '';
+        const updated = await commitChanges(remote => {
+            const now = new Date().toISOString();
+            const existing = remote.find(f => f.id === id);
+            if (isEdit && !existing) {
+                throw new Error('Esta vía ferrata se eliminó desde otro dispositivo.');
             }
-            
-            // Ocultar coordenadas
-            const coordsDisplay = document.getElementById('coords-display');
-            if (coordsDisplay) {
-                coordsDisplay.style.display = 'none';
-            }
-            
-            // Remover marcador del mapa
-            if (marker) {
-                map.removeLayer(marker);
-                marker = null;
-            }
-        }
-        
-        // Cambiar a vista de lista
-        const listView = document.querySelector('[data-view="list"]');
-        if (listView) {
-            listView.click();
-        }
-        
-        if (typeof showSuccess === 'function') {
-            showSuccess(
-                editingFerrataId ? 
-                '✅ Vía ferrata actualizada correctamente' : 
-                '✅ Vía ferrata creada correctamente',
-                'Guardado Exitoso'
-            );
-        }
-        
-        // console.log('✅ handleFormSubmit completado');
-        
+
+            const ferrata = {
+                id,
+                ...fields,
+                media: formMedia,
+                fechaCreacion: existing?.fechaCreacion || now,
+                fechaModificacion: now
+            };
+            const keptPaths = new Set(formMedia.map(m => m.path));
+            const deletePaths = existing
+                ? (existing.media || []).map(m => m.path).filter(p => !keptPaths.has(p))
+                : [];
+
+            return {
+                ferratas: existing ? remote.map(f => (f.id === id ? ferrata : f)) : [...remote, ferrata],
+                deletePaths
+            };
+        }, `${isEdit ? 'Actualizar' : 'Añadir'} ferrata "${nombre}"`, setProgress);
+
+        setFerratas(updated);
+        resetForm();
+        showView('list');
+        showSuccess(isEdit ? 'Vía ferrata actualizada correctamente.' : 'Vía ferrata guardada correctamente.');
     } catch (error) {
-        console.error('❌ Error en formulario:', error.message);
-        if (typeof showError === 'function') {
-            showError(`❌ Error al guardar: ${error.message}`);
-        }
+        console.error('Error al guardar:', error);
+        showError(`No se pudo guardar. Tus datos siguen en el formulario.\n${error.message}`);
     } finally {
-        isSubmitting = false;
+        progress?.remove();
+        setSubmitting(false);
     }
 }
 
-// ===== NAVEGACIÓN =====
-function setupMobileNavigation() {
-    const navItems = document.querySelectorAll('.nav-item');
-    const views = document.querySelectorAll('.view');
-    
-    navItems.forEach(item => {
-        item.addEventListener('click', () => {
-            const targetView = item.getAttribute('data-view');
-            
-            // Actualizar navegación activa
-            navItems.forEach(nav => nav.classList.remove('active'));
-            item.classList.add('active');
-            
-            // Mostrar vista correspondiente
-            views.forEach(view => view.classList.remove('active'));
-            const targetElement = document.getElementById(`view-${targetView}`);
-            if (targetElement) {
-                targetElement.classList.add('active');
-            }
-            
-            // Invalidar tamaño del mapa si se muestra la vista del mapa
-            if (targetView === 'map' && map) {
-                setTimeout(() => {
-                    map.invalidateSize();
-                }, 100);
-            }
-            
-            // console.log(`📱 Vista cambiada a: ${targetView}`);
-        });
-    });
-}
-
-// ===== EVENT LISTENERS =====
-function setupEventListeners() {
-    
-    // Formulario principal
-    const form = document.getElementById('ferrata-form');
-    if (form) {
-        form.addEventListener('submit', handleFormSubmit);
-    }
-    
-    // Botón de selección en mapa
-    const selectMapBtn = document.getElementById('select-on-map');
-    if (selectMapBtn) {
-        selectMapBtn.addEventListener('click', enableMapSelection);
-    }
-    
-    // Upload de archivos
-    const mediaUpload = document.getElementById('media-files');
-    if (mediaUpload) {
-        mediaUpload.addEventListener('change', handleMediaUpload);
-    }
-    
-    // Cerrar modal
-    const closeModal = document.getElementById('close-modal');
-    if (closeModal) {
-        closeModal.addEventListener('click', closeDetailModal);
-    }
-    
-    // Cerrar modal clickeando fuera
-    const modal = document.getElementById('detail-modal');
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeDetailModal();
-            }
-        });
-    }
-    
-    // Filtro de nivel
-    const filterSelect = document.getElementById('nivel-filter');
-    if (filterSelect) {
-        filterSelect.addEventListener('change', applyFilter);
-    }
-    
-    // Generar descripción con IA
-    const generateBtn = document.getElementById('generate-description');
-    if (generateBtn) {
-        generateBtn.addEventListener('click', generateDescription);
-    }
-    
-    // Botón flotante para añadir (si existe)
-    const fab = document.querySelector('.fab');
-    if (fab) {
-        fab.addEventListener('click', () => {
-            const addView = document.querySelector('[data-view="add"]');
-            if (addView) {
-                addView.click();
-            }
-        });
-    }
-    
-    // Atajos de teclado
-    document.addEventListener('keydown', handleKeyboardShortcuts);
-    
-    // ✅ Event listeners configurados
-}
-
-function handleKeyboardShortcuts(event) {
-    // Solo procesar si Ctrl+Shift están presionados
-    if (event.ctrlKey && event.shiftKey) {
-        switch (event.key.toLowerCase()) {
-            case 't':
-                event.preventDefault();
-                if (typeof configureGitHubToken === 'function') {
-                    configureGitHubToken();
-                }
-                break;
-            case 's':
-                event.preventDefault();
-                if (typeof reloadGitHub === 'function') {
-                    reloadGitHub();
-                }
-                break;
-            case 'r':
-                event.preventDefault();
-                loadFerratas(true);
-                break;
-        }
+function setSubmitting(submitting) {
+    state.submitting = submitting;
+    const submitBtn = document.getElementById('submit-btn');
+    if (!submitBtn) return;
+    submitBtn.disabled = submitting;
+    if (submitting) {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    } else {
+        setFormMode(state.editingId ? 'edit' : 'create');
     }
 }
 
-// ===== MANEJO DE ARCHIVOS =====
-function handleMediaUpload(event) {
-    const files = Array.from(event.target.files);
-    
+function setFormMode(mode) {
+    const isEdit = mode === 'edit';
+    const submitBtn = document.getElementById('submit-btn');
+    const cancelBtn = document.getElementById('cancel-edit-btn');
+    const formTitle = document.getElementById('form-title');
+
+    if (submitBtn && !state.submitting) {
+        submitBtn.innerHTML = `<i class="fas fa-save"></i> ${isEdit ? 'Actualizar' : 'Guardar'} Vía Ferrata`;
+    }
+    if (cancelBtn) cancelBtn.style.display = isEdit ? 'inline-flex' : 'none';
+    if (formTitle) formTitle.textContent = isEdit ? 'Editar Vía Ferrata' : 'Añadir Nueva Vía Ferrata';
+}
+
+function resetForm() {
+    document.getElementById('ferrata-form')?.reset();
+    state.editingId = null;
+    state.formMedia = [];
+    renderMediaPreview();
+    clearSelectedCoords();
+    setFormMode('create');
+}
+
+function cancelEdit() {
+    resetForm();
+    showView('list');
+}
+
+// ===== MULTIMEDIA =====
+async function handleMediaUpload(event) {
+    const input = event.target;
+    const files = Array.from(input.files || []);
+    input.value = ''; // permite volver a elegir el mismo archivo
     if (files.length === 0) return;
-    
-    console.log(`📁 Procesando ${files.length} archivos...`);
-    
-    const previewContainer = document.getElementById('media-preview');
-    if (!previewContainer) return;
-    
-    files.forEach((file, index) => {
-        if (file.size > 5 * 1024 * 1024) { // 5MB límite
-            if (typeof showWarning === 'function') {
-                showWarning(`El archivo ${file.name} es demasiado grande (máximo 5MB)`);
-            }
-            return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const dataUrl = e.target.result;
-            
-            // Si es el primer archivo, usarlo como imagen de portada
-            if (index === 0 && file.type.startsWith('image/')) {
-                coverImageData = dataUrl;
-            }
-            
-            // Añadir a la lista de archivos multimedia
-            mediaFiles.push(dataUrl);
-            
-            // Crear preview
-            const previewDiv = document.createElement('div');
-            previewDiv.className = 'preview-image';
-            
+
+    const upload = document.getElementById('media-upload');
+    upload?.classList.add('processing');
+
+    for (const file of files) {
+        try {
             if (file.type.startsWith('image/')) {
-                previewDiv.innerHTML = `
-                    <img src="${dataUrl}" alt="Preview">
-                    <button class="remove-btn" onclick="removeMediaFile(${mediaFiles.length - 1})">×</button>
-                `;
+                state.formMedia.push({ path: await compressImage(file), type: 'image' });
             } else if (file.type.startsWith('video/')) {
-                previewDiv.innerHTML = `
-                    <video src="${dataUrl}" preload="metadata"></video>
-                    <button class="remove-btn" onclick="removeMediaFile(${mediaFiles.length - 1})">×</button>
-                `;
+                if (file.size > MAX_VIDEO_BYTES) {
+                    showWarning(`El vídeo "${file.name}" es demasiado grande (máximo ${MAX_VIDEO_BYTES / 1024 / 1024} MB).`);
+                    continue;
+                }
+                state.formMedia.push({ path: await readAsDataUrl(file), type: 'video' });
+            } else {
+                showWarning(`"${file.name}" no es una foto ni un vídeo.`);
             }
-            
-            previewContainer.appendChild(previewDiv);
-        };
-        
+        } catch (error) {
+            console.error('Error procesando archivo:', error);
+            showWarning(`No se pudo procesar "${file.name}".`);
+        }
+        renderMediaPreview();
+    }
+
+    upload?.classList.remove('processing');
+}
+
+function readAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
         reader.readAsDataURL(file);
     });
 }
 
+// Reduce la foto a MAX_IMAGE_DIMENSION px y la convierte a JPEG
+function compressImage(file) {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(img.naturalWidth, img.naturalHeight));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.naturalWidth * scale);
+            canvas.height = Math.round(img.naturalHeight * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', IMAGE_QUALITY));
+        };
+        img.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Formato de imagen no soportado'));
+        };
+        img.src = url;
+    });
+}
+
+function renderMediaPreview() {
+    const container = document.getElementById('media-preview');
+    if (!container) return;
+
+    container.innerHTML = state.formMedia.map((item, index) => {
+        const url = escapeHtml(mediaUrl(item.path));
+        const isCover = item === state.formMedia.find(m => m.type === 'image');
+        return `
+            <div class="preview-image">
+                ${item.type === 'video'
+                    ? `<video src="${url}" preload="metadata" muted playsinline></video><span class="media-badge"><i class="fas fa-video"></i></span>`
+                    : `<img src="${url}" alt="Vista previa">`}
+                ${isCover ? '<span class="cover-badge">Portada</span>' : ''}
+                <button type="button" class="remove-btn" data-action="remove-media" data-index="${index}" aria-label="Quitar">×</button>
+            </div>`;
+    }).join('');
+}
+
 function removeMediaFile(index) {
-    if (index >= 0 && index < mediaFiles.length) {
-        mediaFiles.splice(index, 1);
-        
-        // Si era la imagen de portada, limpiarla
-        if (index === 0) {
-            coverImageData = null;
-        }
-        
-        // Regenerar preview
-        const previewContainer = document.getElementById('media-preview');
-        if (previewContainer) {
-            previewContainer.innerHTML = '';
-            
-            mediaFiles.forEach((file, i) => {
-                const previewDiv = document.createElement('div');
-                previewDiv.className = 'preview-image';
-                
-                if (file.includes('data:image')) {
-                    previewDiv.innerHTML = `
-                        <img src="${file}" alt="Preview">
-                        <button class="remove-btn" onclick="removeMediaFile(${i})">×</button>
-                    `;
-                } else {
-                    previewDiv.innerHTML = `
-                        <video src="${file}" preload="metadata"></video>
-                        <button class="remove-btn" onclick="removeMediaFile(${i})">×</button>
-                    `;
-                }
-                
-                previewContainer.appendChild(previewDiv);
-            });
-        }
-        
-        console.log(`🗑️ Archivo ${index} eliminado`);
+    if (index >= 0 && index < state.formMedia.length) {
+        state.formMedia.splice(index, 1);
+        renderMediaPreview();
     }
 }
 
-// ===== MODAL =====
-function closeDetailModal() {
-    const modal = document.getElementById('detail-modal');
-    if (modal) {
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-}
+// ===== DESCRIPCIÓN SUGERIDA =====
+async function generateDescription() {
+    const nombre = document.getElementById('nombre').value.trim();
+    const nivel = document.getElementById('nivel').value;
+    const ubicacion = document.getElementById('ubicacion').value.trim();
+    const duracion = parseInt(document.getElementById('duracion').value, 10);
+    const descripcion = document.getElementById('descripcion');
 
-// ===== GENERACIÓN DE DESCRIPCIÓN IA =====
-function generateDescription() {
-    const nombreInput = document.getElementById('nombre');
-    const nivelSelect = document.getElementById('nivel');
-    const ubicacionInput = document.getElementById('ubicacion');
-    const descripcionTextarea = document.getElementById('descripcion');
-    
-    if (!nombreInput || !nivelSelect || !descripcionTextarea) {
-        if (typeof showError === 'function') {
-            showError('No se encontraron los campos necesarios para generar la descripción');
-        }
-        return;
-    }
-    
-    const nombre = nombreInput.value.trim();
-    const nivel = nivelSelect.value;
-    const ubicacion = ubicacionInput.value.trim();
-    
     if (!nombre) {
-        if (typeof showWarning === 'function') {
-            showWarning('Introduce un nombre para la vía ferrata antes de generar la descripción');
-        }
+        showWarning('Escribe primero el nombre de la vía ferrata.');
         return;
     }
-    
-    // Generar descripción básica
-    const nivelTexto = getNivelText(nivel);
-    const ubicacionTexto = ubicacion ? ` en ${ubicacion}` : '';
-    
-    const descripcionGenerada = `La vía ferrata "${nombre}"${ubicacionTexto} es una ruta de nivel ${nivelTexto}. Esta ferrata ofrece una experiencia emocionante con vistas espectaculares y desafíos técnicos apropiados para su nivel de dificultad. Se recomienda llevar el equipamiento adecuado y verificar las condiciones meteorológicas antes de la ascensión.`;
-    
-    descripcionTextarea.value = descripcionGenerada;
-    
-    if (typeof showSuccess === 'function') {
-        showSuccess('Descripción generada correctamente', 'IA');
+    if (descripcion.value.trim()) {
+        const replace = await showConfirmation('Ya hay una descripción escrita. ¿Quieres reemplazarla?', 'Reemplazar descripción', 'Reemplazar', 'Cancelar');
+        if (!replace) return;
     }
-    
-    console.log('🤖 Descripción generada automáticamente');
+
+    const partes = [`Vía ferrata "${nombre}"${ubicacion ? `, situada en ${ubicacion}` : ''}.`];
+    if (NIVELES[nivel]) partes.push(`Dificultad ${getNivelText(nivel)}.`);
+    if (duracion > 0) partes.push(`Duración aproximada: ${formatDuration(duracion)}.`);
+    partes.push('Revisa el estado del equipamiento y la previsión meteorológica antes de salir.');
+    descripcion.value = partes.join(' ');
 }
 
-// ===== UTILIDADES UI =====
-function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+// ===== NAVEGACIÓN =====
+function showView(name) {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.view === name);
+    });
+    document.querySelectorAll('.view').forEach(view => {
+        view.classList.toggle('active', view.id === `view-${name}`);
+    });
+
+    if (name !== 'map' && state.selectingOnMap) {
+        finishMapSelection();
+    }
+    if (name === 'map' && map) {
+        setTimeout(() => map.invalidateSize(), 100);
+    }
+    if (name === 'add' && !state.editingId && !state.selectedCoords && !autoLocationRequested) {
+        autoLocationRequested = true;
+        useCurrentLocation();
+    }
+    window.scrollTo({ top: 0 });
 }
 
-function toggleView(viewName) {
-    const navItem = document.querySelector(`[data-view="${viewName}"]`);
-    if (navItem) {
-        navItem.click();
+// ===== MODALES =====
+function closeDetailModal() {
+    document.getElementById('detail-modal')?.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function openSettings() {
+    const modal = document.getElementById('settings-modal');
+    const input = document.getElementById('token-input');
+    if (!modal || !input) return;
+    input.value = '';
+    input.placeholder = githubToken ? `Token actual: ${githubToken.slice(0, 8)}…` : 'github_pat_...';
+    document.getElementById('remove-token-btn').style.display = githubToken ? 'inline-flex' : 'none';
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSettings() {
+    document.getElementById('settings-modal')?.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+async function saveTokenFromSettings(event) {
+    event.preventDefault();
+    const input = document.getElementById('token-input');
+    const button = document.getElementById('save-token-btn');
+    const token = input.value.trim();
+    if (!token) {
+        showWarning('Pega el token antes de guardar.');
+        return;
+    }
+
+    button.disabled = true;
+    try {
+        await verifyGitHubToken(token);
+        setGitHubToken(token);
+        closeSettings();
+        showSuccess('Token verificado. Ya puedes guardar cambios.', 'GitHub conectado');
+    } catch (error) {
+        showError(error.message, 'Token no válido');
+    } finally {
+        button.disabled = false;
     }
 }
 
-// Interfaz de usuario
+function removeToken() {
+    setGitHubToken('');
+    closeSettings();
+    showInfo('Token eliminado de este dispositivo.');
+}
+
+// ===== EVENTOS =====
+function setupEventListeners() {
+    document.getElementById('ferrata-form')?.addEventListener('submit', handleFormSubmit);
+    document.getElementById('select-on-map')?.addEventListener('click', enableMapSelection);
+    document.getElementById('use-location')?.addEventListener('click', useCurrentLocation);
+    document.getElementById('media-files')?.addEventListener('change', handleMediaUpload);
+    document.getElementById('generate-description')?.addEventListener('click', generateDescription);
+    document.getElementById('cancel-edit-btn')?.addEventListener('click', cancelEdit);
+    document.getElementById('cancel-map-selection')?.addEventListener('click', () => {
+        finishMapSelection();
+        showView('add');
+    });
+
+    document.getElementById('nivel-filter')?.addEventListener('change', (e) => {
+        state.filter = e.target.value;
+        renderFerratas();
+    });
+    document.getElementById('search-input')?.addEventListener('input', (e) => {
+        state.search = e.target.value;
+        renderFerratas();
+    });
+    document.getElementById('reload-btn')?.addEventListener('click', async (e) => {
+        const icon = e.currentTarget.querySelector('i');
+        icon?.classList.add('fa-spin');
+        await loadFerratas();
+        icon?.classList.remove('fa-spin');
+    });
+
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => showView(item.dataset.view));
+    });
+
+    // Modales
+    document.getElementById('close-modal')?.addEventListener('click', closeDetailModal);
+    document.getElementById('detail-modal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'detail-modal') closeDetailModal();
+    });
+    document.getElementById('github-status')?.addEventListener('click', openSettings);
+    document.getElementById('close-settings')?.addEventListener('click', closeSettings);
+    document.getElementById('settings-modal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'settings-modal') closeSettings();
+    });
+    document.getElementById('token-form')?.addEventListener('submit', saveTokenFromSettings);
+    document.getElementById('remove-token-btn')?.addEventListener('click', removeToken);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeDetailModal();
+            closeSettings();
+        }
+    });
+
+    // Acciones de elementos generados dinámicamente
+    document.addEventListener('click', (e) => {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+        const { action, id } = target.dataset;
+
+        switch (action) {
+            case 'detail': showFerrataDetail(id); break;
+            case 'edit': editFerrata(id); break;
+            case 'delete': confirmDelete(id); break;
+            case 'focus-map': focusFerrataOnMap(id); break;
+            case 'reload': loadFerratas(); break;
+            case 'remove-media': removeMediaFile(Number(target.dataset.index)); break;
+        }
+    });
+}

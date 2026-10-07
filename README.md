@@ -1,8 +1,8 @@
 # Vías Ferratas App 🏔️
 
-Aplicación web móvil para gestionar tus vías ferratas favoritas.
+Aplicación web móvil (PWA) para gestionar tus vías ferratas favoritas.
 
-## 🚀 Acceso Directo
+## 🚀 Acceso directo
 
 **Abre desde tu móvil:** [https://suwert8.github.io/pmm-vias-ferratas/](https://suwert8.github.io/pmm-vias-ferratas/)
 
@@ -14,33 +14,42 @@ Aplicación web móvil para gestionar tus vías ferratas favoritas.
 
 ## ✨ Características
 
-- 📍 Guarda ubicaciones GPS de vías ferratas
-- 📸 Añade fotos y videos desde tu cámara
-- 🗺️ Visualiza todas tus rutas en un mapa interactivo
-- 📊 Categoriza por dificultad (K1-K6)
-- 🔍 Filtra por nivel
-- 💾 Todo guardado localmente (LocalStorage)
-- 📶 Funciona sin internet
+- 📍 Guarda la ubicación GPS de cada vía ferrata (tu posición o elegida en el mapa)
+- 📸 Añade fotos (se reducen automáticamente) y vídeos
+- 🗺️ Mapa interactivo con todas tus rutas y enlace "Cómo llegar"
+- 🔍 Búsqueda por nombre/ubicación y filtro por nivel (K1-K6)
+- ☁️ Sincronización entre dispositivos a través de este repositorio de GitHub
+- 📶 Consulta sin conexión de la última copia descargada
 
-## 🎯 Niveles de Dificultad
+## ☁️ Cómo se guardan los datos
 
-- **K1** - Muy Fácil
-- **K2** - Fácil
-- **K3** - Normal
-- **K4** - Moderada
-- **K5** - Difícil
-- **K6** - Muy Difícil
+- `data/ferratas.json`: lista de ferratas (solo texto y rutas de archivos).
+- `media/`: fotos y vídeos, un archivo por elemento.
 
-## 🔒 Privacidad
+Cada cambio se guarda como **un único commit** construido sobre la última versión del repositorio,
+así que usar la app desde varios dispositivos no pisa los datos de los demás.
 
-100% privado. Todos los datos se guardan en tu navegador. Nunca se envía información a internet.
+Para **ver** las ferratas no hace falta nada. Para **guardar, editar o eliminar** pulsa el indicador
+"GitHub" de la cabecera y pega un token *fine-grained* con acceso solo a este repositorio y permiso
+**Contents: Read and write**. El token se guarda únicamente en tu dispositivo.
+
+## 🎯 Niveles de dificultad
+
+| Nivel | Dificultad |
+|-------|------------|
+| K1 | Fácil |
+| K2 | Poco difícil |
+| K3 | Algo difícil |
+| K4 | Difícil |
+| K5 | Muy difícil |
+| K6 | Extremadamente difícil |
 
 ## 💻 Tecnologías
 
-- HTML5 + CSS3 + JavaScript
-- Leaflet.js (mapas)
-- LocalStorage API
-- PWA (Progressive Web App)
+- HTML5 + CSS3 + JavaScript (sin dependencias de compilación)
+- Leaflet.js + OpenStreetMap
+- GitHub REST API (Git Data API)
+- PWA con service worker
 
 ---
 

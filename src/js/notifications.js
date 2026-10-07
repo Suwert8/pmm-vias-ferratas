@@ -22,9 +22,9 @@ function showNotification(message, type = 'info', title = null, duration = 5000)
     notification.innerHTML = `
         <div class="notification-header">
             <i class="notification-icon ${icons[type] || icons.info}"></i>
-            <span>${title || getDefaultTitle(type)}</span>
+            <span>${escapeHtml(title || getDefaultTitle(type))}</span>
         </div>
-        <div class="notification-message">${message}</div>
+        <div class="notification-message">${escapeHtml(message)}</div>
         <button class="notification-close" onclick="this.parentElement.remove()">
             <i class="fas fa-times"></i>
         </button>
@@ -107,12 +107,12 @@ function showConfirmation(message, title = 'Confirmar acción', confirmText = 'S
         notification.innerHTML = `
             <div class="notification-header">
                 <i class="notification-icon fas fa-question-circle"></i>
-                <span>${title}</span>
+                <span>${escapeHtml(title)}</span>
             </div>
-            <div class="notification-message">${message}</div>
+            <div class="notification-message">${escapeHtml(message)}</div>
             <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
-                <button class="btn btn-secondary btn-small confirm-cancel">${cancelText}</button>
-                <button class="btn btn-accent btn-small confirm-ok">${confirmText}</button>
+                <button class="btn btn-secondary btn-small confirm-cancel">${escapeHtml(cancelText)}</button>
+                <button class="btn btn-accent btn-small confirm-ok">${escapeHtml(confirmText)}</button>
             </div>
         `;
         
@@ -156,4 +156,3 @@ function showConfirmation(message, title = 'Confirmar acción', confirmText = 'S
     });
 }
 
-// Sistema de notificaciones modernas - v1.5.0

@@ -84,6 +84,7 @@
     font-size: 0.9em;
     line-height: 1.4;
     margin: 0;
+    white-space: pre-line;
 }
 
 .notification-close {
