@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vías Ferratas - v1.5.1</title>
+    <title>Vías Ferratas</title>
     
     <!-- PWA Meta Tags -->
     <meta name="description" content="Tu guía personal de vías ferratas">
@@ -15,6 +15,8 @@
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" href="./icons/icon-192.png">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
     
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -35,10 +37,10 @@
             </h1>
             <p>
                 Tu guía personal
-                <span id="github-status" class="github-status disconnected">
+                <button type="button" id="github-status" class="github-status disconnected">
                     <i class="fas fa-cloud"></i>
-                    <span id="github-status-text">GitHub: No conectado</span>
-                </span>
+                    <span id="github-status-text">GitHub: Solo lectura</span>
+                </button>
             </p>
         </header>
 
@@ -46,23 +48,26 @@
             <!-- Vista: Lista de Ferratas -->
             <div id="view-list" class="view active">
                 <div class="section">
-                    <h2>
-                        <i class="fas fa-list"></i>
-                        Mis Vías Ferratas
+                    <h2 class="section-title">
+                        <span><i class="fas fa-list"></i> Mis Vías Ferratas <small id="ferratas-count" class="count"></small></span>
+                        <button type="button" id="reload-btn" class="icon-btn" title="Recargar desde GitHub" aria-label="Recargar">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
                     </h2>
 
                     <div class="filter-section">
-                        <label for="nivel-filter">
-                            <i class="fas fa-filter"></i> Filtrar por nivel:
-                        </label>
-                        <select id="nivel-filter" class="filter-select">
-                            <option value="todas">Todas</option>
-                            <option value="k1">K1 - Muy Fácil</option>
-                            <option value="k2">K2 - Fácil</option>
-                            <option value="k3">K3 - Normal</option>
-                            <option value="k4">K4 - Moderada</option>
-                            <option value="k5">K5 - Difícil</option>
-                            <option value="k6">K6 - Muy Difícil</option>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="search" id="search-input" placeholder="Buscar por nombre o ubicación" aria-label="Buscar">
+                        </div>
+                        <select id="nivel-filter" class="filter-select" aria-label="Filtrar por nivel">
+                            <option value="todas">Todos los niveles</option>
+                            <option value="k1">K1 - Fácil</option>
+                            <option value="k2">K2 - Poco difícil</option>
+                            <option value="k3">K3 - Algo difícil</option>
+                            <option value="k4">K4 - Difícil</option>
+                            <option value="k5">K5 - Muy difícil</option>
+                            <option value="k6">K6 - Extremadamente difícil</option>
                         </select>
                     </div>
 
@@ -77,6 +82,10 @@
                         <i class="fas fa-map-marked-alt"></i>
                         Mapa
                     </h2>
+                    <div id="map-selection-banner" class="map-selection-banner">
+                        <span><i class="fas fa-crosshairs"></i> Toca el mapa para elegir la ubicación</span>
+                        <button type="button" id="cancel-map-selection" class="btn btn-small btn-secondary">Cancelar</button>
+                    </div>
                     <div id="map"></div>
                 </div>
             </div>
@@ -86,7 +95,7 @@
                 <div class="section">
                     <h2>
                         <i class="fas fa-plus-circle"></i>
-                        Añadir Nueva Vía Ferrata
+                        <span id="form-title">Añadir Nueva Vía Ferrata</span>
                     </h2>
 
                     <form id="ferrata-form" name="ferrata-form">
@@ -110,12 +119,12 @@
                             </label>
                             <select id="nivel" name="nivel" required>
                                 <option value="">Selecciona un nivel</option>
-                                <option value="k1">K1 - Muy Fácil</option>
-                                <option value="k2">K2 - Fácil</option>
-                                <option value="k3">K3 - Normal</option>
-                                <option value="k4">K4 - Moderada</option>
-                                <option value="k5">K5 - Difícil</option>
-                                <option value="k6">K6 - Muy Difícil</option>
+                                <option value="k1">K1 - Fácil</option>
+                                <option value="k2">K2 - Poco difícil</option>
+                                <option value="k3">K3 - Algo difícil</option>
+                                <option value="k4">K4 - Difícil</option>
+                                <option value="k5">K5 - Muy difícil</option>
+                                <option value="k6">K6 - Extremadamente difícil</option>
                             </select>
                         </div>
 
@@ -123,7 +132,7 @@
                             <label for="duracion">
                                 <i class="fas fa-clock"></i> Duración (minutos)
                             </label>
-                            <input type="number" id="duracion" name="duracion" placeholder="Ej: 120">
+                            <input type="number" id="duracion" name="duracion" min="1" inputmode="numeric" placeholder="Ej: 120">
                         </div>
 
                         <div class="form-group">
@@ -131,9 +140,9 @@
                                 <i class="fas fa-align-left"></i> Descripción
                             </label>
                             <textarea id="descripcion" name="descripcion" placeholder="Describe la vía ferrata..."></textarea>
-                            <button type="button" class="btn btn-secondary" id="generate-description" style="margin-top: 10px; width: 100%;">
-                                <i class="fas fa-robot"></i>
-                                Generar Descripción con IA
+                            <button type="button" class="btn btn-secondary btn-block" id="generate-description">
+                                <i class="fas fa-magic"></i>
+                                Sugerir descripción
                             </button>
                         </div>
 
@@ -154,14 +163,18 @@
                         <div class="form-group">
                             <label>
                                 <i class="fas fa-map-pin"></i> Ubicación en Mapa
-                                <span id="location-status" class="location-status">
-                                    <i class="fas fa-spinner fa-spin"></i> Obteniendo ubicación...
+                                <span id="location-status" class="location-status error">
+                                    <i class="fas fa-exclamation-circle"></i> Sin ubicación
                                 </span>
                             </label>
                             <div class="location-buttons">
+                                <button type="button" class="btn btn-secondary" id="use-location">
+                                    <i class="fas fa-location-arrow"></i>
+                                    Mi ubicación
+                                </button>
                                 <button type="button" class="btn btn-secondary" id="select-on-map">
                                     <i class="fas fa-map-marker-alt"></i>
-                                    Cambiar en Mapa
+                                    Elegir en mapa
                                 </button>
                             </div>
                             <div id="coords-display" class="coords-display" style="display: none;"></div>
@@ -171,20 +184,21 @@
                             <label>
                                 <i class="fas fa-photo-video"></i> Fotos y Videos
                             </label>
-                            <div class="file-upload" id="media-upload">
+                            <label class="file-upload" id="media-upload" for="media-files">
                                 <i class="fas fa-photo-video" style="font-size: 2em; color: var(--accent-color);"></i>
-                                <p>Añadir fotos o videos</p>
+                                <p>Añadir fotos o vídeos</p>
+                                <small>Las fotos se reducen automáticamente. La primera foto será la portada.</small>
                                 <input type="file" id="media-files" accept="image/*,video/*" multiple>
-                            </div>
+                            </label>
                             <div id="media-preview" class="preview-images"></div>
                         </div>
 
                         <div class="form-buttons">
-                            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            <button type="submit" id="submit-btn" class="btn btn-primary" style="flex: 1;">
                                 <i class="fas fa-save"></i>
                                 Guardar Vía Ferrata
                             </button>
-                            <button type="button" id="cancel-edit-btn" class="btn btn-secondary" style="flex: 0 0 auto; margin-left: 10px; display: none;" onclick="cancelEdit()">
+                            <button type="button" id="cancel-edit-btn" class="btn btn-secondary" style="flex: 0 0 auto; display: none;">
                                 <i class="fas fa-times"></i>
                                 Cancelar
                             </button>
@@ -219,11 +233,47 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modal-title"></h2>
-                <button class="modal-close" id="close-modal">
+                <button type="button" class="modal-close" id="close-modal" aria-label="Cerrar">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="modal-body" id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Modal de ajustes (token GitHub) -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2><i class="fab fa-github"></i> Conexión con GitHub</h2>
+                <button type="button" class="modal-close" id="close-settings" aria-label="Cerrar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Puedes ver las ferratas sin token. Para <strong>guardar, editar o eliminar</strong> necesitas un token de GitHub:</p>
+                <ol class="help-steps">
+                    <li>En GitHub ve a <em>Settings → Developer settings → Personal access tokens → Fine-grained tokens</em>.</li>
+                    <li>Pulsa <em>Generate new token</em> y en <em>Repository access</em> elige solo <strong>pmm-vias-ferratas</strong>.</li>
+                    <li>En <em>Permissions → Contents</em> selecciona <strong>Read and write</strong>.</li>
+                    <li>Copia el token y pégalo aquí.</li>
+                </ol>
+                <form id="token-form">
+                    <div class="form-group">
+                        <label for="token-input">Token</label>
+                        <input type="password" id="token-input" autocomplete="off" spellcheck="false">
+                    </div>
+                    <div class="form-buttons">
+                        <button type="submit" id="save-token-btn" class="btn btn-primary" style="flex: 1;">
+                            <i class="fas fa-check"></i> Verificar y guardar
+                        </button>
+                        <button type="button" id="remove-token-btn" class="btn btn-accent">
+                            <i class="fas fa-trash"></i> Quitar
+                        </button>
+                    </div>
+                </form>
+                <p class="app-version" id="app-version"></p>
+            </div>
         </div>
     </div>
 

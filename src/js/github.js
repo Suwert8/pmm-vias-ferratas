@@ -1,292 +1,254 @@
-// Funciones de GitHub
+// Sincronización con GitHub
+//
+// Los datos viven en data/ferratas.json y las fotos/vídeos en media/.
+// Cada guardado es un único commit atómico (Git Data API) construido sobre la
+// versión remota más reciente, así nunca se pisan datos de otro dispositivo.
 
-// ===== FUNCIONES GITHUB =====
-async function configureGitHubToken() {
-    const currentToken = githubToken || '';
-    const tokenInput = prompt(
-        `Introduce tu token de GitHub:\n\n` +
-        `🔗 Cómo obtener el token:\n` +
-        `1. Ve a github.com → Settings → Developer settings\n` +
-        `2. Personal access tokens → Tokens (classic)\n` +
-        `3. Generate new token (classic)\n` +
-        `4. Selecciona scope: 'repo' (Full control of private repositories)\n` +
-        `5. Copia el token generado\n\n` +
-        `${currentToken ? `Token actual: ${currentToken.substring(0, 8)}...` : 'No hay token configurado'}`,
-        currentToken
-    );
-    
-    if (tokenInput !== null) {
-        if (tokenInput.trim() === '') {
-            localStorage.removeItem('github-token');
-            githubToken = '';
-            showWarning('Token de GitHub eliminado', 'Configuración');
-        } else {
-            localStorage.setItem('github-token', tokenInput.trim());
-            githubToken = tokenInput.trim();
-            showSuccess('Token de GitHub configurado correctamente', 'Configuración');
-        }
-        updateGitHubStatus();
+const GITHUB_API = 'https://api.github.com';
+const LOCAL_CACHE_KEY = 'ferratas-cache';
+
+function repoApi(path) {
+    return `${GITHUB_API}/repos/${GITHUB.owner}/${GITHUB.repo}${path}`;
+}
+
+async function githubFetch(url, { method = 'GET', body, accept, auth = true } = {}) {
+    const headers = { 'Accept': accept || 'application/vnd.github+json' };
+    if (auth && githubToken) {
+        headers['Authorization'] = `Bearer ${githubToken}`;
     }
+    if (body !== undefined) {
+        headers['Content-Type'] = 'application/json';
+    }
+    const response = await fetch(url, {
+        method,
+        headers,
+        cache: 'no-store',
+        body: body !== undefined ? JSON.stringify(body) : undefined
+    });
+    if (!response.ok) {
+        const error = new Error(await describeGitHubError(response));
+        error.status = response.status;
+        throw error;
+    }
+    return response;
+}
+
+async function describeGitHubError(response) {
+    let detail = '';
+    try {
+        const data = await response.json();
+        detail = data.message || '';
+    } catch (e) { /* sin cuerpo JSON */ }
+
+    switch (response.status) {
+        case 401: return 'El token de GitHub no es válido o ha caducado.';
+        case 403: return detail.includes('rate limit')
+            ? 'Límite de peticiones a GitHub alcanzado. Configura un token o espera unos minutos.'
+            : 'El token no tiene permiso de escritura en el repositorio.';
+        case 404: return 'Recurso no encontrado en GitHub.';
+        default: return `GitHub respondió ${response.status}${detail ? ': ' + detail : ''}`;
+    }
+}
+
+// ===== LECTURA =====
+async function fetchFerratasAt(ref) {
+    const url = repoApi(`/contents/${GITHUB.dataPath}?ref=${encodeURIComponent(ref)}`);
+    try {
+        // El tipo "raw" funciona con archivos de hasta 100 MB (el JSON normal solo hasta 1 MB)
+        const response = await githubFetch(url, { accept: 'application/vnd.github.raw+json' });
+        const text = (await response.text()).replace(/^﻿/, '').trim();
+        if (!text) return [];
+        const data = JSON.parse(text);
+        if (!Array.isArray(data)) {
+            throw new Error('El archivo de datos no contiene una lista válida');
+        }
+        return data.map(normalizeFerrata);
+    } catch (error) {
+        if (error.status === 404) return [];
+        throw error;
+    }
+}
+
+async function loadFromGitHub() {
+    const ferratas = await fetchFerratasAt(GITHUB.branch);
+    saveLocalCache(ferratas);
+    return ferratas;
+}
+
+function saveLocalCache(ferratas) {
+    safeStorageSet(LOCAL_CACHE_KEY, JSON.stringify(ferratas));
+}
+
+function loadLocalCache() {
+    try {
+        const raw = safeStorageGet(LOCAL_CACHE_KEY);
+        return raw ? JSON.parse(raw).map(normalizeFerrata) : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+// ===== ESCRITURA =====
+
+// Aplica `mutate(ferratasRemotas)` y lo guarda como un único commit.
+// `mutate` devuelve { ferratas, deletePaths } y puede ejecutarse varias veces
+// si otro dispositivo guardó a la vez (se reintenta sobre los datos nuevos).
+async function commitChanges(mutate, message, onProgress = () => {}) {
+    if (!githubToken) {
+        throw new Error('Configura tu token de GitHub para poder guardar (pulsa el indicador de GitHub arriba).');
+    }
+
+    const blobCache = new Map(); // data URL -> sha del blob ya subido
+    const MAX_ATTEMPTS = 3;
+
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        onProgress('Leyendo datos actuales...');
+        const refResponse = await githubFetch(repoApi(`/git/ref/heads/${GITHUB.branch}`));
+        const headSha = (await refResponse.json()).object.sha;
+        const commitResponse = await githubFetch(repoApi(`/git/commits/${headSha}`));
+        const baseTreeSha = (await commitResponse.json()).tree.sha;
+
+        const remote = await fetchFerratasAt(headSha);
+        const result = mutate(remote);
+        const deletePaths = result.deletePaths || [];
+        // Copia profunda: los reintentos deben partir siempre de las data URL originales
+        const next = result.ferratas.map(f => ({ ...f, media: (f.media || []).map(m => ({ ...m })) }));
+
+        // Subir como archivos los multimedia nuevos (y los antiguos incrustados en base64)
+        const treeEntries = [];
+        const pending = [];
+        next.forEach(ferrata => {
+            (ferrata.media || []).forEach((item, index) => {
+                if (item.path.startsWith('data:')) pending.push({ ferrata, item, index });
+            });
+        });
+
+        for (let i = 0; i < pending.length; i++) {
+            const { ferrata, item } = pending[i];
+            onProgress(`Subiendo archivos (${i + 1}/${pending.length})...`);
+            const dataUrl = item.path;
+            let sha = blobCache.get(dataUrl);
+            if (!sha) {
+                const blobResponse = await githubFetch(repoApi('/git/blobs'), {
+                    method: 'POST',
+                    body: { content: dataUrl.slice(dataUrl.indexOf(',') + 1), encoding: 'base64' }
+                });
+                sha = (await blobResponse.json()).sha;
+                blobCache.set(dataUrl, sha);
+            }
+            const path = `${GITHUB.mediaDir}/${ferrata.id}-${sha.slice(0, 10)}.${extensionFromDataUrl(dataUrl)}`;
+            treeEntries.push({ path, mode: '100644', type: 'blob', sha });
+            item.path = path;
+        }
+
+        // Borrar solo archivos que existan y ya no use ninguna ferrata
+        const stillUsed = new Set(next.flatMap(f => (f.media || []).map(m => m.path)));
+        const candidates = deletePaths.filter(p => p.startsWith(`${GITHUB.mediaDir}/`) && !stillUsed.has(p));
+        if (candidates.length > 0) {
+            const existing = await listMediaFiles(headSha);
+            candidates.filter(p => existing.has(p)).forEach(path => {
+                treeEntries.push({ path, mode: '100644', type: 'blob', sha: null });
+            });
+        }
+
+        treeEntries.push({
+            path: GITHUB.dataPath,
+            mode: '100644',
+            type: 'blob',
+            content: JSON.stringify(next, null, 2) + '\n'
+        });
+
+        onProgress('Guardando en GitHub...');
+        const treeResponse = await githubFetch(repoApi('/git/trees'), {
+            method: 'POST',
+            body: { base_tree: baseTreeSha, tree: treeEntries }
+        });
+        const treeSha = (await treeResponse.json()).sha;
+
+        const newCommitResponse = await githubFetch(repoApi('/git/commits'), {
+            method: 'POST',
+            body: { message, tree: treeSha, parents: [headSha] }
+        });
+        const newCommitSha = (await newCommitResponse.json()).sha;
+
+        try {
+            await githubFetch(repoApi(`/git/refs/heads/${GITHUB.branch}`), {
+                method: 'PATCH',
+                body: { sha: newCommitSha, force: false }
+            });
+        } catch (error) {
+            // 422 = alguien guardó entre medias; se reintenta sobre los datos nuevos
+            if (error.status === 422 && attempt < MAX_ATTEMPTS) continue;
+            throw error;
+        }
+
+        saveLocalCache(next);
+        return next;
+    }
+
+    throw new Error('No se pudo guardar: los datos cambiaron varias veces mientras se guardaba. Inténtalo de nuevo.');
+}
+
+async function listMediaFiles(ref) {
+    try {
+        const response = await githubFetch(repoApi(`/contents/${GITHUB.mediaDir}?ref=${encodeURIComponent(ref)}`));
+        const items = await response.json();
+        return new Set(items.map(item => item.path));
+    } catch (error) {
+        if (error.status === 404) return new Set();
+        throw error;
+    }
+}
+
+function extensionFromDataUrl(dataUrl) {
+    const mime = (dataUrl.match(/^data:([^;,]+)/) || [])[1] || '';
+    const known = {
+        'image/jpeg': 'jpg',
+        'image/png': 'png',
+        'image/webp': 'webp',
+        'image/gif': 'gif',
+        'video/mp4': 'mp4',
+        'video/quicktime': 'mov',
+        'video/webm': 'webm'
+    };
+    return known[mime] || (mime.split('/')[1] || 'bin').replace(/[^a-z0-9]/gi, '');
+}
+
+// ===== TOKEN =====
+async function verifyGitHubToken(token) {
+    const response = await fetch(repoApi(''), {
+        headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': `Bearer ${token}`
+        },
+        cache: 'no-store'
+    });
+    if (response.status === 401) {
+        throw new Error('El token no es válido o ha caducado.');
+    }
+    if (!response.ok) {
+        throw new Error(`El token no tiene acceso al repositorio (${response.status}).`);
+    }
+    const repo = await response.json();
+    if (repo.permissions && !repo.permissions.push) {
+        throw new Error('El token solo tiene permiso de lectura. Necesita "Contents: Read and write".');
+    }
+}
+
+function setGitHubToken(token) {
+    githubToken = token || '';
+    safeStorageSet('github-token', githubToken || null);
+    updateGitHubStatus();
 }
 
 function updateGitHubStatus() {
     const statusElement = document.getElementById('github-status');
     const statusText = document.getElementById('github-status-text');
-    
-    if (githubToken) {
-        statusElement.className = 'github-status connected';
-        statusText.textContent = 'GitHub: Conectado';
-    } else {
-        statusElement.className = 'github-status disconnected';
-        statusText.textContent = 'GitHub: No conectado';
-    }
-    
-    // Añadir tooltip
-    statusElement.title = githubToken ? 
-        'GitHub conectado. Click para reconfigurar token (Ctrl+Shift+T)' : 
-        'GitHub no conectado. Click para configurar token (Ctrl+Shift+T)';
+    if (!statusElement || !statusText) return;
+
+    statusElement.className = `github-status ${githubToken ? 'connected' : 'disconnected'}`;
+    statusText.textContent = githubToken ? 'GitHub: Conectado' : 'GitHub: Solo lectura';
+    statusElement.title = githubToken
+        ? 'GitHub conectado. Pulsa para cambiar el token.'
+        : 'Pulsa para configurar el token y poder guardar.';
 }
-
-async function loadFromGitHub() {
-    if (!githubToken) {
-        console.log('⚠️ No hay token de GitHub configurado');
-        return [];
-    }
-
-    try {
-        
-        const url = `https://api.github.com/repos/${githubRepo}/contents/${githubFilePath}?ref=${githubBranch}&t=${Date.now()}`;
-        const response = await fetch(url, {
-            headers: {
-                'Authorization': `token ${githubToken}`,
-                'Accept': 'application/vnd.github.v3+json'
-            }
-        });
-
-        if (!response.ok) {
-            if (response.status === 404) {
-                console.log('📄 Archivo no encontrado en GitHub, creando uno nuevo...');
-                return [];
-            }
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        
-        // Verificar que tenemos contenido
-        if (!data.content) {
-            console.log('📄 Archivo sin contenido en GitHub, retornando array vacío...');
-            return [];
-        }
-        
-        // Decodificar contenido desde Base64 con manejo de UTF-8
-        let content;
-        try {
-            const binaryString = atob(data.content.replace(/\\s/g, ''));
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
-            const decoder = new TextDecoder('utf-8');
-            content = decoder.decode(bytes);
-        } catch (decodeError) {
-            console.warn('⚠️ Error en decodificación UTF-8, usando fallback...', decodeError.message);
-            content = atob(data.content.replace(/\\s/g, ''));
-        }
-        
-        // Limpiar BOM y caracteres problemáticos
-        const cleanContent = content.replace(/^\\uFEFF/, '').trim();
-        
-        if (!cleanContent) {
-            console.log('📄 Archivo vacío en GitHub, retornando array vacío...');
-            return [];
-        }
-
-        try {
-            const ferratas = JSON.parse(cleanContent);
-            
-            // Validar que sea un array
-            if (!Array.isArray(ferratas)) {
-                throw new Error('El contenido no es un array válido');
-            }
-            
-            // console.log(`✅ ${ferratas.length} ferratas cargadas desde GitHub`);
-            return ferratas;
-            
-        } catch (parseError) {
-            console.error('⚠️ Error al parsear JSON desde GitHub:', parseError.message);
-            console.log('📄 Contenido problemático (primeros 200 caracteres):', cleanContent.substring(0, 200));
-            
-            // Si el contenido está vacío o es muy corto
-            if (cleanContent.length === 0) {
-                console.log('📄 Archivo completamente vacío, retornando array vacío');
-                return [];
-            }
-            
-            // Si el contenido es muy corto y no es JSON válido
-            if (cleanContent.length < 10) {
-                console.log('📄 Contenido muy corto y no válido, retornando array vacío');
-                return [];
-            }
-            
-            // Intentar reparar JSON común y problemas de encoding
-            try {
-                let repairedContent = cleanContent
-                    .replace(/[\\x00-\\x1F\\x7F]/g, '') // Remover caracteres de control
-                    .replace(/,\\s*([}\\]])/g, '$1')   // Remover comas finales
-                    .replace(/Ã±/g, 'ñ')            // Reparar ñ mal codificada
-                    .replace(/Ã¡/g, 'á')            // Reparar á mal codificada  
-                    .replace(/Ã©/g, 'é')            // Reparar é mal codificada
-                    .replace(/Ã­/g, 'í')            // Reparar í mal codificada
-                    .replace(/Ã³/g, 'ó')            // Reparar ó mal codificada
-                    .replace(/Ãº/g, 'ú')            // Reparar ú mal codificada
-                    .trim();
-                    
-                console.log('🔧 Intentando reparar JSON...');
-                const repairedFerratas = JSON.parse(repairedContent);
-                console.log('✅ JSON reparado y cargado correctamente (problemas de encoding corregidos)');
-                return repairedFerratas;
-                
-            } catch (repairError) {
-                console.error('❌ No se pudo reparar el JSON:', repairError.message);
-                console.log('🔧 Último recurso: retornando array vacío');
-                return [];
-            }
-        }
-        
-    } catch (error) {
-        console.error('❌ Error al cargar desde GitHub:', error.message);
-        return [];
-    }
-}
-
-async function saveToGitHub(newData = null, operation = 'sync', retryCount = 0) {
-    if (!githubToken) {
-        showError('⚠️ Configura tu token de GitHub primero (Ctrl+Shift+T)');
-        return false;
-    }
-
-    // PROTECCIÓN ABSOLUTA: Solo permitir 1 retry máximo para evitar recursión
-    if (retryCount > 1) {
-        showError(`❌ Demasiados intentos (${retryCount}). Operación cancelada para evitar recursión.`);
-        return false;
-    }
-
-    try {
-        console.log(`📤 ${operation === 'add' ? 'Añadiendo' : operation === 'delete' ? 'Eliminando' : 'Guardando'} datos en GitHub...`);
-        
-        let updatedFerratas;
-
-        if (operation === 'sync' && newData) {
-            // Sincronización completa: usar datos proporcionados directamente
-            updatedFerratas = newData;
-        } else if (operation === 'add' && newData && newData.length > 0) {
-            // Añadir: NUNCA recargar - usar solo datos en memoria
-            console.log(`🔄 Usando datos en memoria: ${ferratas.length} ferratas existentes`);
-            updatedFerratas = [...ferratas, ...newData];
-        } else if (operation === 'delete' && newData) {
-            // Eliminar: NUNCA recargar - usar solo datos en memoria
-            console.log(`🔄 Eliminando de datos en memoria: ${ferratas.length} ferratas existentes`);
-            updatedFerratas = ferratas.filter(f => f.id !== newData);
-        } else {
-            // Fallback seguro: usar datos en memoria
-            console.log(`🔄 Fallback: usando datos en memoria (${ferratas.length} ferratas)`);
-            updatedFerratas = [...ferratas];
-        }
-
-        const content = JSON.stringify(updatedFerratas, null, 2);
-        
-        // Codificación UTF-8 correcta para Base64
-        const encoder = new TextEncoder();
-        const utf8Bytes = encoder.encode(content);
-        const base64String = btoa(String.fromCharCode(...utf8Bytes));
-
-        // Obtener SHA del archivo actual (siempre fresco)
-        const getUrl = `https://api.github.com/repos/${githubRepo}/contents/${githubFilePath}?ref=${githubBranch}&t=${Date.now()}`;
-        const getResponse = await fetch(getUrl, {
-            headers: {
-                'Authorization': `token ${githubToken}`,
-                'Accept': 'application/vnd.github.v3+json'
-            }
-        });
-
-        let sha = '';
-        if (getResponse.ok) {
-            const data = await getResponse.json();
-            sha = data.sha;
-        }
-
-        // Crear o actualizar archivo con SHA fresco
-        const putUrl = `https://api.github.com/repos/${githubRepo}/contents/${githubFilePath}`;
-        const putResponse = await fetch(putUrl, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `token ${githubToken}`,
-                'Accept': 'application/vnd.github.v3+json',
-                'Content-Type': 'application/json; charset=utf-8'
-            },
-            body: JSON.stringify({
-                message: `${operation === 'add' ? 'Añadir' : operation === 'delete' ? 'Eliminar' : 'Actualizar'} ferratas - ${new Date().toLocaleString('es-ES')}`,
-                content: base64String,
-                branch: githubBranch,
-                ...(sha && { sha })
-            })
-        });
-
-        if (!putResponse.ok) {
-            const errorData = await putResponse.json().catch(() => ({}));
-            
-            // RETRY ÚNICO para conflictos 409 - SIN RECURSIÓN
-            if (putResponse.status === 409 && retryCount === 0) {
-                console.log(`🔄 Conflicto 409 detectado, pero NO reintentamos para evitar recursión`);
-                throw new Error(`Conflicto 409: El archivo fue modificado por otro proceso. Intenta de nuevo manualmente.`);
-            }
-            
-            throw new Error(`HTTP ${putResponse.status}: ${JSON.stringify(errorData, null, 2)}`);
-        }
-
-        // console.log('✅ Datos guardados en GitHub correctamente');
-        
-        // Actualizar variable global y renderizar
-        ferratas = updatedFerratas;
-        if (typeof renderFerratas === 'function') {
-            renderFerratas(updatedFerratas);
-        }
-        
-        return updatedFerratas;
-        
-    } catch (error) {
-        console.error('❌ Error al sincronizar con GitHub:', error.message);
-        
-        // CERO RETRY MANUAL - ELIMINAR COMPLETAMENTE LA RECURSIÓN
-        showError(`❌ Error al guardar en GitHub${retryCount > 0 ? ` (retry ${retryCount})` : ''}:\\n${error.message}`);
-        
-        return false;
-    }
-}
-
-async function reloadGitHub() {
-    try {
-        // console.log('🔄 Iniciando recarga desde GitHub...');
-        
-        // Cargar datos frescos desde GitHub y actualizar interfaz
-        // console.log('📥 Cargando datos desde GitHub...');
-        const loadedFerratas = await loadFromGitHub();
-        if (loadedFerratas) {
-            // Actualizar variable global y renderizar
-            ferratas = loadedFerratas;
-            if (typeof renderFerratas === 'function') {
-                renderFerratas(ferratas);
-            }
-            showSuccess(`✅ Recarga completada: ${ferratas.length} ferratas cargadas desde GitHub`, 'Sincronización Exitosa');
-        } else {
-            showError('❌ No se pudieron cargar los datos desde GitHub');
-        }
-        
-    } catch (error) {
-        console.error('❌ Error en recarga desde GitHub:', error.message);
-        showError(`❌ Error en recarga: ${error.message}`);
-    }
-}
-
-// Módulo GitHub

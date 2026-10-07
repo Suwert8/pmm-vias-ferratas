@@ -1,407 +1,269 @@
-// Gestión de ferratas
+// Gestión de ferratas: carga, listado, detalle, edición y borrado
 
-// ===== GESTIÓN DE FERRATAS =====
-async function loadFerratas(forceReload = false) {
+// ===== CARGA =====
+async function loadFerratas() {
+    const container = document.getElementById('ferratas-list');
+    if (container && !state.loaded) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <h3>Cargando vías ferratas...</h3>
+            </div>
+        `;
+    }
+
     try {
-        if (forceReload || ferratas.length === 0) {
-            // Solo recargar desde GitHub si es forzado o no hay datos en memoria
-            const loadedFerratas = await loadFromGitHub();
-            ferratas = loadedFerratas || []; // Actualizar variable global
-        } else {
-            // Usar datos en memoria
-            // console.log(`📋 Usando ferratas en memoria: ${ferratas.length} ferratas`);
-        }
-        
-        renderFerratas(ferratas);
+        setFerratas(await loadFromGitHub());
     } catch (error) {
-        console.error('❌ Error al cargar ferratas:', error.message);
-        const container = document.getElementById('ferratas-list');
-        if (container) {
+        console.error('Error al cargar ferratas:', error);
+        const cached = loadLocalCache();
+        if (cached) {
+            setFerratas(cached);
+            showWarning(`No se pudo conectar con GitHub. Mostrando la última copia guardada en este dispositivo.\n${error.message}`, 'Sin conexión');
+        } else if (container) {
             container.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-exclamation-triangle"></i>
                     <h3>Error al cargar datos</h3>
-                    <p>No se pudieron cargar las vías ferratas desde GitHub</p>
-                    <button class="btn btn-primary" onclick="loadFerratas(true)">Reintentar</button>
+                    <p>${escapeHtml(error.message)}</p>
+                    <button type="button" class="btn btn-primary" data-action="reload">Reintentar</button>
                 </div>
             `;
         }
     }
 }
 
-function renderFerratas(ferratasList) {
+function setFerratas(list) {
+    state.ferratas = list;
+    state.loaded = true;
+    renderFerratas();
+}
+
+function getVisibleFerratas() {
+    const search = state.search.trim().toLocaleLowerCase('es');
+    return state.ferratas
+        .filter(f => state.filter === 'todas' || f.nivel === state.filter)
+        .filter(f => !search || `${f.nombre} ${f.ubicacion || ''}`.toLocaleLowerCase('es').includes(search))
+        .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' }));
+}
+
+// ===== LISTADO =====
+function renderFerratas() {
     const container = document.getElementById('ferratas-list');
-    if (!container) {
-        console.error('❌ Contenedor ferratas-list no encontrado');
-        return;
+    const counter = document.getElementById('ferratas-count');
+    if (!container) return;
+
+    const visible = getVisibleFerratas();
+    renderMarkers(visible);
+
+    if (counter) {
+        counter.textContent = state.ferratas.length
+            ? `${visible.length} de ${state.ferratas.length}`
+            : '';
     }
-    
-    if (!ferratasList || ferratasList.length === 0) {
+
+    if (state.ferratas.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-mountain"></i>
                 <h3>No hay vías ferratas</h3>
-                <p>Añade tu primera vía ferrata usando el botón +</p>
+                <p>Añade tu primera vía ferrata desde la pestaña "Añadir"</p>
             </div>
         `;
         return;
     }
-    
-    // Filtrar según selección actual
-    let filteredFerratas = ferratasList;
-    if (currentFilter !== 'todas') {
-        filteredFerratas = ferratasList.filter(f => f.nivel === currentFilter);
-    }
-    
-    if (filteredFerratas.length === 0) {
+
+    if (visible.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-filter"></i>
-                <h3>No hay ferratas con este filtro</h3>
-                <p>Prueba con otro nivel de dificultad</p>
+                <h3>Ninguna ferrata coincide</h3>
+                <p>Prueba con otro nivel o con otra búsqueda</p>
             </div>
         `;
         return;
     }
-    
-    container.innerHTML = filteredFerratas.map(ferrata => `
-        <div class="ferrata-card" onclick="showFerrataDetail('${ferrata.id}')">
+
+    container.innerHTML = visible.map(ferrata => {
+        const cover = getCoverPath(ferrata);
+        const id = escapeHtml(ferrata.id);
+        return `
+        <div class="ferrata-card" data-action="detail" data-id="${id}">
             <div class="ferrata-header">
-                ${ferrata.coverImage ? 
-                    `<img src="${ferrata.coverImage}" alt="${ferrata.nombre}" onerror="this.parentElement.innerHTML='<div class=\\"no-image\\">🏔️</div>'">` :
-                    '<div class="no-image">🏔️</div>'
-                }
-                <div class="ferrata-level level-${ferrata.nivel}">${getNivelText(ferrata.nivel)}</div>
+                ${cover
+                    ? `<img src="${escapeHtml(mediaUrl(cover))}" alt="${escapeHtml(ferrata.nombre)}" loading="lazy" data-fallback>`
+                    : '<div class="no-image">🏔️</div>'}
+                <div class="ferrata-level level-${escapeHtml(ferrata.nivel)}">${escapeHtml(getNivelText(ferrata.nivel))}</div>
             </div>
             <div class="ferrata-body">
-                <h3 class="ferrata-title">${ferrata.nombre}</h3>
+                <h3 class="ferrata-title">${escapeHtml(ferrata.nombre)}</h3>
                 <div class="ferrata-info">
-                    ${ferrata.duracion ? `<span><i class="fas fa-clock"></i> ${formatDuration(ferrata.duracion)}</span>` : ''}
-                    ${ferrata.ubicacion ? `<span><i class="fas fa-map-marker-alt"></i> ${ferrata.ubicacion}</span>` : ''}
+                    ${ferrata.duracion ? `<span><i class="fas fa-clock"></i> ${escapeHtml(formatDuration(ferrata.duracion))}</span>` : ''}
+                    ${ferrata.ubicacion ? `<span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(ferrata.ubicacion)}</span>` : ''}
                 </div>
-                <div class="ferrata-actions" onclick="event.stopPropagation()">
-                    <button class="btn btn-small btn-secondary" onclick="editFerrata('${ferrata.id}')">
+                <div class="ferrata-actions">
+                    <button type="button" class="btn btn-small btn-secondary" data-action="edit" data-id="${id}">
                         <i class="fas fa-edit"></i> Editar
                     </button>
-                    <button class="btn btn-small btn-accent" onclick="confirmDelete('${ferrata.id}')">
+                    <button type="button" class="btn btn-small btn-accent" data-action="delete" data-id="${id}">
                         <i class="fas fa-trash"></i> Eliminar
                     </button>
                 </div>
             </div>
+        </div>`;
+    }).join('');
+
+    // Si una imagen no carga, mostrar el icono por defecto
+    container.querySelectorAll('img[data-fallback]').forEach(img => {
+        img.addEventListener('error', () => {
+            img.outerHTML = '<div class="no-image">🏔️</div>';
+        }, { once: true });
+    });
+}
+
+// ===== DETALLE =====
+function showFerrataDetail(id) {
+    const ferrata = state.ferratas.find(f => f.id === id);
+    if (!ferrata) {
+        showError('No se encontró la vía ferrata.');
+        return;
+    }
+
+    const modal = document.getElementById('detail-modal');
+    const title = document.getElementById('modal-title');
+    const body = document.getElementById('modal-body');
+    if (!modal || !title || !body) return;
+
+    const media = ferrata.media || [];
+    const cover = getCoverPath(ferrata);
+    const hasCoords = Number.isFinite(ferrata.lat) && Number.isFinite(ferrata.lng);
+    const directions = hasCoords
+        ? `https://www.google.com/maps/dir/?api=1&destination=${ferrata.lat},${ferrata.lng}`
+        : '';
+    const textBlock = (icon, label, value, extraClass = '') => value ? `
+        <div class="detail-block ${extraClass}">
+            <strong><i class="fas ${icon}"></i> ${label}:</strong>
+            <p>${escapeHtml(value)}</p>
+        </div>` : '';
+
+    title.textContent = ferrata.nombre;
+    body.innerHTML = `
+        <div class="ferrata-level level-${escapeHtml(ferrata.nivel)} detail-level">
+            ${escapeHtml(getNivelText(ferrata.nivel))}
         </div>
-    `).join('');
-}
 
-async function saveFerrataToStorage(ferrata) {
-    try {
-        if (editingFerrataId) {
-            // Modo edición: actualizar ferrata existente
-            // console.log(`📝 Actualizando ferrata ID ${editingFerrataId}...`);
-            ferrata.id = editingFerrataId; // Mantener el ID original
-            
-            // USAR DATOS EN MEMORIA PARA EVITAR RECURSIÓN
-            // console.log(`🔄 Usando datos en memoria para actualización: ${ferratas.length} ferratas existentes`);
-            const currentFerratas = [...ferratas]; // Copia de los datos en memoria
-            const index = currentFerratas.findIndex(f => f.id === editingFerrataId);
-            
-            if (index === -1) {
-                throw new Error('No se encontró la ferrata a actualizar');
-            }
-            
-            currentFerratas[index] = ferrata;
-            const result = await saveToGitHub(currentFerratas, 'sync');
-            
-            if (result) {
-                // console.log('✅ Ferrata actualizada correctamente');
-                editingFerrataId = null; // Salir del modo edición
-                
-                // Restaurar texto del botón
-                const submitBtn = document.querySelector('#ferrata-form button[type="submit"]');
-                if (submitBtn) {
-                    submitBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Vía Ferrata';
-                }
-                
-                // Ocultar botón cancelar
-                const cancelBtn = document.getElementById('cancel-edit-btn');
-                if (cancelBtn) {
-                    cancelBtn.style.display = 'none';
-                }
-                
-                // Restaurar título del formulario
-                const formTitle = document.querySelector('#view-add h2');
-                if (formTitle) {
-                    formTitle.textContent = 'Añadir Nueva Vía Ferrata';
-                }
-            }
-        } else {
-            // Modo creación: nueva ferrata
-            // console.log('📝 Creando nueva ferrata...');
-            const result = await saveToGitHub([ferrata], 'add');
-            
-            if (result) {
-                // console.log('✅ Nueva ferrata creada correctamente');
-            }
-        }
-    } catch (error) {
-        console.error('❌ Error al guardar ferrata:', error.message);
-        if (typeof showError === 'function') {
-            showError(`❌ Error al guardar la ferrata: ${error.message}`);
-        }
-        throw error;
-    }
-}
+        ${cover ? `<img class="detail-cover" src="${escapeHtml(mediaUrl(cover))}" alt="${escapeHtml(ferrata.nombre)}">` : ''}
 
-async function showFerrataDetail(id) {
-    try {
-        // USAR DATOS EN MEMORIA PARA EVITAR RECURSIÓN
-        console.log(`🔍 Buscando ferrata ID ${id} en datos en memoria`);
-        const ferrata = ferratas.find(f => f.id === id);
-        if (!ferrata) {
-            if (typeof showError === 'function') {
-                showError(`No se encontró la ferrata con ID ${id}`);
-            }
-            return;
-        }
+        <div class="detail-grid">
+            ${ferrata.duracion ? `<div><strong><i class="fas fa-clock"></i> Duración:</strong><br>${escapeHtml(formatDuration(ferrata.duracion))}</div>` : ''}
+            ${ferrata.ubicacion ? `<div><strong><i class="fas fa-map-marker-alt"></i> Ubicación:</strong><br>${escapeHtml(ferrata.ubicacion)}</div>` : ''}
+            ${hasCoords ? `<div><strong><i class="fas fa-crosshairs"></i> Coordenadas:</strong><br>${ferrata.lat.toFixed(5)}, ${ferrata.lng.toFixed(5)}</div>` : ''}
+        </div>
 
-        const modal = document.getElementById('detail-modal');
-        const title = document.getElementById('modal-title');
-        const body = document.getElementById('modal-body');
-        
-        if (!modal || !title || !body) {
-            console.error('❌ Elementos del modal no encontrados');
-            return;
-        }
+        ${textBlock('fa-align-left', 'Descripción', ferrata.descripcion)}
+        ${textBlock('fa-tools', 'Equipamiento', ferrata.equipamiento)}
+        ${textBlock('fa-exclamation-triangle', 'Observaciones', ferrata.observaciones, 'warning-text')}
 
-        title.textContent = ferrata.nombre;
-        body.innerHTML = `
-            <div class="ferrata-level level-${ferrata.nivel}" style="display: inline-block; margin-bottom: 15px;">
-                ${getNivelText(ferrata.nivel)}
+        ${media.length > 0 ? `
+            <div class="detail-block">
+                <strong><i class="fas fa-images"></i> Galería (${media.length}):</strong>
+                <div class="media-gallery">
+                    ${media.map(item => {
+                        const url = escapeHtml(mediaUrl(item.path));
+                        return item.type === 'video'
+                            ? `<div class="media-item"><video src="${url}" controls preload="metadata" playsinline></video></div>`
+                            : `<a class="media-item" href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="Foto de ${escapeHtml(ferrata.nombre)}" loading="lazy"></a>`;
+                    }).join('')}
+                </div>
             </div>
-            
-            ${ferrata.coverImage ? `
-                <div style="margin-bottom: 20px;">
-                    <img src="${ferrata.coverImage}" alt="${ferrata.nombre}" style="width: 100%; border-radius: 8px;">
-                </div>
-            ` : ''}
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                ${ferrata.duracion ? `<div><strong><i class="fas fa-clock"></i> Duración:</strong><br>${formatDuration(ferrata.duracion)}</div>` : ''}
-                ${ferrata.ubicacion ? `<div><strong><i class="fas fa-map-marker-alt"></i> Ubicación:</strong><br>${ferrata.ubicacion}</div>` : ''}
-                ${ferrata.nivel ? `<div><strong><i class="fas fa-chart-line"></i> Nivel:</strong><br>${getNivelText(ferrata.nivel)}</div>` : ''}
-            </div>
-            
-            ${ferrata.descripcion ? `
-                <div style="margin-bottom: 20px;">
-                    <strong><i class="fas fa-align-left"></i> Descripción:</strong>
-                    <p style="margin-top: 10px; line-height: 1.6;">${ferrata.descripcion}</p>
-                </div>
-            ` : ''}
-            
-            ${ferrata.equipamiento ? `
-                <div style="margin-bottom: 20px;">
-                    <strong><i class="fas fa-tools"></i> Equipamiento:</strong>
-                    <p style="margin-top: 10px; line-height: 1.6;">${ferrata.equipamiento}</p>
-                </div>
-            ` : ''}
-            
-            ${ferrata.observaciones ? `
-                <div style="margin-bottom: 20px;">
-                    <strong><i class="fas fa-exclamation-triangle"></i> Observaciones:</strong>
-                    <p style="margin-top: 10px; line-height: 1.6; color: #ff6b35;">${ferrata.observaciones}</p>
-                </div>
-            ` : ''}
-            
-            ${ferrata.mediaFiles && ferrata.mediaFiles.length > 0 ? `
-                <div>
-                    <strong><i class="fas fa-images"></i> Galería:</strong>
-                    <div class="media-gallery">
-                        ${ferrata.mediaFiles.map(media => `
-                            <div class="media-item" onclick="window.open('${media}', '_blank')">
-                                ${media.includes('.mp4') || media.includes('.webm') || media.includes('.mov') ? 
-                                    `<video src="${media}" preload="metadata"></video>` :
-                                    `<img src="${media}" alt="Foto de ${ferrata.nombre}">`
-                                }
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            ` : ''}
-        `;
-        
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        
-    } catch (error) {
-        console.error('❌ Error al mostrar detalle:', error.message);
-        if (typeof showError === 'function') {
-            showError(`Error al cargar los detalles: ${error.message}`);
-        }
-    }
+        ` : ''}
+
+        <div class="detail-actions">
+            ${hasCoords ? `
+                <a class="btn btn-primary" href="${directions}" target="_blank" rel="noopener">
+                    <i class="fas fa-route"></i> Cómo llegar
+                </a>
+                <button type="button" class="btn btn-secondary" data-action="focus-map" data-id="${escapeHtml(ferrata.id)}">
+                    <i class="fas fa-map"></i> Ver en mapa
+                </button>` : ''}
+            <button type="button" class="btn btn-secondary" data-action="edit" data-id="${escapeHtml(ferrata.id)}">
+                <i class="fas fa-edit"></i> Editar
+            </button>
+            <button type="button" class="btn btn-accent" data-action="delete" data-id="${escapeHtml(ferrata.id)}">
+                <i class="fas fa-trash"></i> Eliminar
+            </button>
+        </div>
+    `;
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
-async function editFerrata(id) {
-    try {
-        // USAR DATOS EN MEMORIA PARA EVITAR RECURSIÓN
-        console.log(`📝 Editando ferrata ID ${id} desde datos en memoria`);
-        const ferrata = ferratas.find(f => f.id === id);
-        if (!ferrata) {
-            if (typeof showError === 'function') {
-                showError('❌ No se encontró la ferrata para editar');
-            }
-            return;
-        }
-
-        // Cambiar a vista de añadir
-        const addView = document.querySelector('[data-view="add"]');
-        if (addView) {
-            addView.click();
-        }
-        
-        // Establecer modo edición
-        editingFerrataId = id;
-        
-        // Llenar formulario con datos existentes
-        const form = document.getElementById('ferrata-form');
-        if (!form) {
-            console.error('❌ Formulario no encontrado');
-            return;
-        }
-        
-        const nombreInput = document.getElementById('nombre');
-        const ubicacionInput = document.getElementById('ubicacion');
-        const nivelSelect = document.getElementById('nivel');
-        const duracionInput = document.getElementById('duracion');
-        const descripcionTextarea = document.getElementById('descripcion');
-        const equipamientoInput = document.getElementById('equipamiento');
-        const observacionesTextarea = document.getElementById('observaciones');
-        
-        if (nombreInput) nombreInput.value = ferrata.nombre || '';
-        if (ubicacionInput) ubicacionInput.value = ferrata.ubicacion || '';
-        if (nivelSelect) nivelSelect.value = ferrata.nivel || 'k1';
-        if (duracionInput) duracionInput.value = ferrata.duracion || '';
-        if (descripcionTextarea) descripcionTextarea.value = ferrata.descripcion || '';
-        if (equipamientoInput) equipamientoInput.value = ferrata.equipamiento || '';
-        if (observacionesTextarea) observacionesTextarea.value = ferrata.observaciones || '';
-        
-        // Establecer coordenadas
-        if (ferrata.lat && ferrata.lng) {
-            setSelectedCoords(ferrata.lat, ferrata.lng);
-            if (map) {
-                map.setView([ferrata.lat, ferrata.lng], 12);
-            }
-        }
-        
-        // Cambiar textos del formulario
-        const submitBtn = document.querySelector('#ferrata-form button[type="submit"]');
-        if (submitBtn) {
-            submitBtn.innerHTML = '<i class="fas fa-save"></i> Actualizar Vía Ferrata';
-        }
-        
-        const cancelBtn = document.getElementById('cancel-edit-btn');
-        if (cancelBtn) {
-            cancelBtn.style.display = 'inline-flex';
-        }
-        
-        const formTitle = document.querySelector('#view-add h2');
-        if (formTitle) {
-            formTitle.textContent = 'Editar Vía Ferrata';
-        }
-        
-        console.log('📝 Formulario llenado para edición');
-        
-    } catch (error) {
-        console.error('❌ Error al editar ferrata:', error.message);
-        if (typeof showError === 'function') {
-            showError(`Error al editar: ${error.message}`);
-        }
+// ===== EDICIÓN =====
+function editFerrata(id) {
+    const ferrata = state.ferratas.find(f => f.id === id);
+    if (!ferrata) {
+        showError('No se encontró la vía ferrata para editar.');
+        return;
     }
+
+    closeDetailModal();
+    resetForm();
+    state.editingId = id;
+
+    const setValue = (fieldId, value) => {
+        const field = document.getElementById(fieldId);
+        if (field) field.value = value ?? '';
+    };
+    setValue('nombre', ferrata.nombre);
+    setValue('ubicacion', ferrata.ubicacion);
+    setValue('nivel', ferrata.nivel);
+    setValue('duracion', ferrata.duracion);
+    setValue('descripcion', ferrata.descripcion);
+    setValue('equipamiento', ferrata.equipamiento);
+    setValue('observaciones', ferrata.observaciones);
+
+    if (Number.isFinite(ferrata.lat) && Number.isFinite(ferrata.lng)) {
+        setSelectedCoords(ferrata.lat, ferrata.lng);
+    }
+
+    state.formMedia = (ferrata.media || []).map(item => ({ ...item }));
+    renderMediaPreview();
+    setFormMode('edit');
+    showView('add');
 }
 
+// ===== BORRADO =====
 async function confirmDelete(id) {
-    // USAR DATOS EN MEMORIA PARA EVITAR RECURSIÓN
-    console.log(`🗑️ Confirmando eliminación de ferrata ID ${id} desde datos en memoria`);
-    const ferrata = ferratas.find(f => f.id === id);
-    const ferrataName = ferrata ? ferrata.nombre : 'esta vía ferrata';
-    
-    if (typeof showConfirmation === 'function') {
-        const confirmed = await showConfirmation(
-            `¿Estás seguro de que quieres eliminar "${ferrataName}"?\\n\\nEsta acción no se puede deshacer.`,
-            'Confirmar Eliminación',
-            'Eliminar',
-            'Cancelar'
-        );
-        
-        if (confirmed) {
-            deleteFromGitHub(id);
-        }
-    }
-}
+    const ferrata = state.ferratas.find(f => f.id === id);
+    if (!ferrata) return;
 
-async function deleteFromGitHub(id) {
+    const confirmed = await showConfirmation(
+        `¿Seguro que quieres eliminar "${ferrata.nombre}"?\nTambién se borrarán sus fotos y vídeos. Esta acción no se puede deshacer.`,
+        'Confirmar eliminación',
+        'Eliminar',
+        'Cancelar'
+    );
+    if (!confirmed) return;
+
+    const progress = showNotification('Eliminando...', 'info', 'GitHub', 0);
     try {
-        console.log(`🗑️ Eliminando ferrata ID ${id}...`);
-        const result = await saveToGitHub(id, 'delete');
-        
-        if (result) {
-            if (typeof showSuccess === 'function') {
-                showSuccess('✅ Vía ferrata eliminada correctamente', 'Eliminación Exitosa');
-            }
-            console.log('✅ Ferrata eliminada correctamente');
-        }
+        const updated = await commitChanges(remote => {
+            const target = remote.find(f => f.id === id);
+            return {
+                ferratas: remote.filter(f => f.id !== id),
+                deletePaths: target ? (target.media || []).map(m => m.path) : []
+            };
+        }, `Eliminar ferrata "${ferrata.nombre}"`);
+
+        closeDetailModal();
+        if (state.editingId === id) resetForm();
+        setFerratas(updated);
+        showSuccess('Vía ferrata eliminada correctamente.');
     } catch (error) {
-        console.error('❌ Error al eliminar ferrata:', error.message);
-        if (typeof showError === 'function') {
-            showError(`❌ Error al eliminar: ${error.message}`);
-        }
+        console.error('Error al eliminar:', error);
+        showError(`No se pudo eliminar.\n${error.message}`);
+    } finally {
+        progress?.remove();
     }
 }
-
-function cancelEdit() {
-    editingFerrataId = null;
-    
-    const form = document.getElementById('ferrata-form');
-    if (form) {
-        form.reset();
-    }
-    
-    // Restaurar textos
-    const submitBtn = document.querySelector('#ferrata-form button[type="submit"]');
-    if (submitBtn) {
-        submitBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Vía Ferrata';
-    }
-    
-    const cancelBtn = document.getElementById('cancel-edit-btn');
-    if (cancelBtn) {
-        cancelBtn.style.display = 'none';
-    }
-    
-    const formTitle = document.querySelector('#view-add h2');
-    if (formTitle) {
-        formTitle.textContent = 'Añadir Nueva Vía Ferrata';
-    }
-    
-    // Limpiar coordenadas
-    selectedCoords = null;
-    if (marker) {
-        map.removeLayer(marker);
-        marker = null;
-    }
-    
-    const coordsDisplay = document.getElementById('coords-display');
-    if (coordsDisplay) {
-        coordsDisplay.style.display = 'none';
-    }
-    
-    console.log('📝 Edición cancelada');
-}
-
-function applyFilter() {
-    const filterSelect = document.getElementById('nivel-filter');
-    if (filterSelect) {
-        currentFilter = filterSelect.value;
-        console.log('🔍 Aplicando filtro:', currentFilter);
-        renderFerratas(ferratas);
-    }
-}
-
-// Gestión de ferratas
