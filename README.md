@@ -17,7 +17,9 @@ Aplicación web móvil (PWA) para gestionar tus vías ferratas favoritas.
 - 📍 Guarda la ubicación GPS de cada vía ferrata (tu posición o elegida en el mapa)
 - 📸 Añade fotos (se reducen automáticamente) y vídeos
 - 🗺️ Mapa interactivo con todas tus rutas y enlace "Cómo llegar"
-- 🔍 Búsqueda por nombre/ubicación y filtro por nivel (K1-K6)
+- ✅ Registro de ascensiones: fecha, valoración con estrellas, compañeros y notas de cada salida
+- 📊 Resumen de ferratas hechas y pendientes; los marcadores del mapa se colorean según el estado
+- 🔍 Búsqueda por nombre/ubicación y filtros por nivel (K1-K6) y por estado
 - ☁️ Sincronización entre dispositivos a través de este repositorio de GitHub
 - 📶 Consulta sin conexión de la última copia descargada
 

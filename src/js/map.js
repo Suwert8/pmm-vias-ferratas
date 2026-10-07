@@ -4,6 +4,7 @@ let map = null;
 let markersLayer = null;
 let selectionMarker = null;
 let markersFitted = false;
+let markerBounds = null;
 
 const selectionIcon = () => L.divIcon({
     className: 'selection-marker',
@@ -44,22 +45,33 @@ function renderMarkers(list) {
     withCoords.forEach(ferrata => {
         const popup = document.createElement('div');
         popup.className = 'map-popup';
+        const done = isDone(ferrata);
         popup.innerHTML = `
-            <strong>${escapeHtml(ferrata.nombre)}</strong><br>
-            <span>${escapeHtml(getNivelText(ferrata.nivel))}</span><br>
-            <button type="button" class="btn btn-small btn-primary">Ver detalles</button>
+            <strong>${escapeHtml(ferrata.nombre)}</strong>
+            <span class="tag level-tag level-${escapeHtml(ferrata.nivel)}">${escapeHtml(getNivelText(ferrata.nivel))}</span>
+            <span class="tag ${done ? 'tag-done' : 'tag-pending'}">${done ? '✓ Hecha' : 'Pendiente'}</span>
+            <button type="button" class="btn btn-small btn-primary">Ver ficha</button>
         `;
         popup.querySelector('button').addEventListener('click', () => showFerrataDetail(ferrata.id));
 
-        L.marker([ferrata.lat, ferrata.lng]).bindPopup(popup).addTo(markersLayer);
+        const icon = L.divIcon({
+            className: `ferrata-pin ${done ? 'done' : 'pending'}`,
+            html: `<div class="pin"><i class="fas fa-${done ? 'check' : 'mountain'}"></i></div>`,
+            iconSize: [30, 30],
+            iconAnchor: [15, 34],
+            popupAnchor: [0, -32]
+        });
+        L.marker([ferrata.lat, ferrata.lng], { icon, title: ferrata.nombre }).bindPopup(popup).addTo(markersLayer);
     });
 
-    // Encuadrar todas las ferratas la primera vez que se cargan
-    if (!markersFitted && withCoords.length > 0) {
-        markersFitted = true;
-        const bounds = L.latLngBounds(withCoords.map(f => [f.lat, f.lng]));
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
-    }
+    markerBounds = withCoords.length > 0 ? L.latLngBounds(withCoords.map(f => [f.lat, f.lng])) : null;
+}
+
+// Encuadra todas las ferratas la primera vez que se abre el mapa (con tamaño real)
+function fitMarkersOnce() {
+    if (markersFitted || !markerBounds || !map) return;
+    markersFitted = true;
+    map.fitBounds(markerBounds, { padding: [40, 40], maxZoom: 12 });
 }
 
 function focusFerrataOnMap(id) {
