@@ -148,3 +148,19 @@
         min-width: 0;
     }
 }
+/* Posición bajo la barra superior y ancho completo en móvil */
+.notification-container {
+    top: calc(var(--app-bar-height, 56px) + env(safe-area-inset-top, 0px) + 10px);
+}
+
+@media (max-width: 600px) {
+    .notification-container {
+        left: 12px;
+        right: 12px;
+    }
+
+    .notification {
+        max-width: none;
+        min-width: 0;
+    }
+}

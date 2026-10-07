@@ -12,8 +12,11 @@ async function handleFormSubmit(event) {
     const nombre = (formData.get('nombre') || '').trim();
     const nivel = formData.get('nivel');
 
+    document.getElementById('nombre').classList.toggle('invalid', !nombre);
+    document.getElementById('nivel').classList.toggle('invalid', !NIVELES[nivel]);
     if (!nombre) {
         showWarning('El nombre es obligatorio.');
+        document.getElementById('nombre').focus();
         return;
     }
     if (!NIVELES[nivel]) {
@@ -60,6 +63,7 @@ async function handleFormSubmit(event) {
                 id,
                 ...fields,
                 media: formMedia,
+                ascensiones: existing?.ascensiones || [],
                 fechaCreacion: existing?.fechaCreacion || now,
                 fechaModificacion: now
             };
@@ -106,14 +110,15 @@ function setFormMode(mode) {
     const formTitle = document.getElementById('form-title');
 
     if (submitBtn && !state.submitting) {
-        submitBtn.innerHTML = `<i class="fas fa-save"></i> ${isEdit ? 'Actualizar' : 'Guardar'} Vía Ferrata`;
+        submitBtn.innerHTML = `<i class="fas fa-save"></i> ${isEdit ? 'Guardar cambios' : 'Guardar'}`;
     }
     if (cancelBtn) cancelBtn.style.display = isEdit ? 'inline-flex' : 'none';
-    if (formTitle) formTitle.textContent = isEdit ? 'Editar Vía Ferrata' : 'Añadir Nueva Vía Ferrata';
+    if (formTitle) formTitle.textContent = isEdit ? 'Editar vía ferrata' : 'Nueva vía ferrata';
 }
 
 function resetForm() {
     document.getElementById('ferrata-form')?.reset();
+    document.querySelectorAll('#ferrata-form .invalid').forEach(el => el.classList.remove('invalid'));
     state.editingId = null;
     state.formMedia = [];
     renderMediaPreview();
@@ -255,7 +260,11 @@ function showView(name) {
         finishMapSelection();
     }
     if (name === 'map' && map) {
-        setTimeout(() => map.invalidateSize(), 100);
+        const selecting = state.selectingOnMap;
+        setTimeout(() => {
+            map.invalidateSize();
+            if (!selecting) fitMarkersOnce();
+        }, 100);
     }
     if (name === 'add' && !state.editingId && !state.selectedCoords && !autoLocationRequested) {
         autoLocationRequested = true;
@@ -328,9 +337,17 @@ function setupEventListeners() {
         showView('add');
     });
 
-    document.getElementById('nivel-filter')?.addEventListener('change', (e) => {
-        state.filter = e.target.value;
-        renderFerratas();
+    document.querySelectorAll('#nivel-chips .chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            state.filter = chip.dataset.nivel;
+            renderFerratas();
+        });
+    });
+    document.querySelectorAll('#stats .stat').forEach(stat => {
+        stat.addEventListener('click', () => {
+            state.estado = stat.dataset.estado;
+            renderFerratas();
+        });
     });
     document.getElementById('search-input')?.addEventListener('input', (e) => {
         state.search = e.target.value;
@@ -358,10 +375,14 @@ function setupEventListeners() {
         if (e.target.id === 'settings-modal') closeSettings();
     });
     document.getElementById('token-form')?.addEventListener('submit', saveTokenFromSettings);
+    setupAscensionListeners();
     document.getElementById('remove-token-btn')?.addEventListener('click', removeToken);
 
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
+        if (e.key !== 'Escape') return;
+        if (document.getElementById('ascension-modal')?.classList.contains('active')) {
+            closeAscensionForm();
+        } else {
             closeDetailModal();
             closeSettings();
         }
@@ -380,6 +401,11 @@ function setupEventListeners() {
             case 'focus-map': focusFerrataOnMap(id); break;
             case 'reload': loadFerratas(); break;
             case 'remove-media': removeMediaFile(Number(target.dataset.index)); break;
+            case 'add-ascension': openAscensionForm(id); break;
+            case 'edit-ascension': openAscensionForm(id, target.dataset.asc); break;
+            case 'delete-ascension': deleteAscension(id, target.dataset.asc); break;
+            case 'clear-filters': clearFilters(); break;
+            case 'go-add': showView('add'); break;
         }
     });
 }

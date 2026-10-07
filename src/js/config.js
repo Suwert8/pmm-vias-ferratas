@@ -1,7 +1,7 @@
 // Configuración, estado global y utilidades
 
 // ===== VERSIÓN DE LA APLICACIÓN =====
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 
 // ===== CONFIGURACIÓN GITHUB =====
 const GITHUB = {
@@ -35,7 +35,8 @@ const state = {
     selectedCoords: null,
     formMedia: [],          // [{ path, type }] – path es ruta del repo o data URL (nuevo)
     selectingOnMap: false,
-    filter: 'todas',
+    filter: 'todas',        // nivel
+    estado: 'todas',        // todas | hechas | pendientes
     search: '',
     submitting: false
 };
@@ -122,7 +123,53 @@ function normalizeFerrata(raw) {
     }
     delete ferrata.coverImage;
     delete ferrata.mediaFiles;
+    ferrata.ascensiones = Array.isArray(ferrata.ascensiones) ? ferrata.ascensiones : [];
     return ferrata;
+}
+
+// ===== ASCENSIONES =====
+function sortAscensiones(list) {
+    return [...list].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+}
+
+function isDone(ferrata) {
+    return (ferrata.ascensiones || []).length > 0;
+}
+
+function lastAscension(ferrata) {
+    return sortAscensiones(ferrata.ascensiones || [])[0] || null;
+}
+
+function averageRating(ferrata) {
+    const rated = (ferrata.ascensiones || []).filter(a => a.valoracion > 0);
+    if (rated.length === 0) return 0;
+    return rated.reduce((sum, a) => sum + a.valoracion, 0) / rated.length;
+}
+
+function renderStars(value) {
+    const rounded = Math.round(value);
+    let html = '<span class="stars" aria-label="' + rounded + ' de 5 estrellas">';
+    for (let i = 1; i <= 5; i++) {
+        html += `<i class="fas fa-star${i <= rounded ? '' : ' empty'}"></i>`;
+    }
+    return html + '</span>';
+}
+
+// Fecha local en formato AAAA-MM-DD (para <input type="date">)
+function todayIso() {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
+function parseIsoDate(iso) {
+    const [y, m, d] = (iso || '').split('-').map(Number);
+    return y ? new Date(y, (m || 1) - 1, d || 1) : null;
+}
+
+function formatDate(iso, options = { day: 'numeric', month: 'short', year: 'numeric' }) {
+    const date = parseIsoDate(iso);
+    return date ? date.toLocaleDateString('es-ES', options) : '';
 }
 
 function getFullVersionString() {

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Vías Ferratas</title>
     
     <!-- PWA Meta Tags -->
@@ -30,218 +30,243 @@
 </head>
 <body>
     <div id="container" class="container">
-        <header>
-            <h1>
+        <header class="app-bar">
+            <div class="app-bar-title">
                 <i class="fas fa-mountain"></i>
-                Vías Ferratas
-            </h1>
-            <p>
-                Tu guía personal
-                <button type="button" id="github-status" class="github-status disconnected">
-                    <i class="fas fa-cloud"></i>
-                    <span id="github-status-text">GitHub: Solo lectura</span>
+                <span>Vías Ferratas</span>
+            </div>
+            <div class="app-bar-actions">
+                <button type="button" id="reload-btn" class="icon-btn" title="Recargar desde GitHub" aria-label="Recargar">
+                    <i class="fas fa-sync-alt"></i>
                 </button>
-            </p>
+                <button type="button" id="github-status" class="github-status disconnected">
+                    <i class="fab fa-github"></i>
+                    <span id="github-status-text">Solo lectura</span>
+                </button>
+            </div>
         </header>
 
-        <div class="main-content">
-            <!-- Vista: Lista de Ferratas -->
-            <div id="view-list" class="view active">
-                <div class="section">
-                    <h2 class="section-title">
-                        <span><i class="fas fa-list"></i> Mis Vías Ferratas <small id="ferratas-count" class="count"></small></span>
-                        <button type="button" id="reload-btn" class="icon-btn" title="Recargar desde GitHub" aria-label="Recargar">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                    </h2>
-
-                    <div class="filter-section">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="search" id="search-input" placeholder="Buscar por nombre o ubicación" aria-label="Buscar">
-                        </div>
-                        <select id="nivel-filter" class="filter-select" aria-label="Filtrar por nivel">
-                            <option value="todas">Todos los niveles</option>
-                            <option value="k1">K1 - Fácil</option>
-                            <option value="k2">K2 - Poco difícil</option>
-                            <option value="k3">K3 - Algo difícil</option>
-                            <option value="k4">K4 - Difícil</option>
-                            <option value="k5">K5 - Muy difícil</option>
-                            <option value="k6">K6 - Extremadamente difícil</option>
-                        </select>
-                    </div>
-
-                    <div id="ferratas-list" class="ferratas-list"></div>
+        <main class="main-content">
+            <!-- Vista: Lista -->
+            <section id="view-list" class="view active">
+                <div class="stats" id="stats">
+                    <button type="button" class="stat active" data-estado="todas">
+                        <span class="stat-value" id="stat-total">0</span>
+                        <span class="stat-label">Todas</span>
+                    </button>
+                    <button type="button" class="stat stat-done" data-estado="hechas">
+                        <span class="stat-value" id="stat-done">0</span>
+                        <span class="stat-label"><i class="fas fa-check"></i> Hechas</span>
+                    </button>
+                    <button type="button" class="stat stat-pending" data-estado="pendientes">
+                        <span class="stat-value" id="stat-pending">0</span>
+                        <span class="stat-label"><i class="far fa-clock"></i> Pendientes</span>
+                    </button>
                 </div>
-            </div>
+
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="search" id="search-input" placeholder="Buscar por nombre o ubicación" aria-label="Buscar">
+                </div>
+
+                <div class="chips" id="nivel-chips" role="group" aria-label="Filtrar por nivel">
+                    <button type="button" class="chip active" data-nivel="todas">Todos</button>
+                    <button type="button" class="chip" data-nivel="k1">K1</button>
+                    <button type="button" class="chip" data-nivel="k2">K2</button>
+                    <button type="button" class="chip" data-nivel="k3">K3</button>
+                    <button type="button" class="chip" data-nivel="k4">K4</button>
+                    <button type="button" class="chip" data-nivel="k5">K5</button>
+                    <button type="button" class="chip" data-nivel="k6">K6</button>
+                </div>
+
+                <p class="results-count" id="ferratas-count"></p>
+                <div id="ferratas-list" class="ferratas-list"></div>
+            </section>
 
             <!-- Vista: Mapa -->
-            <div id="view-map" class="view">
-                <div class="section">
-                    <h2>
-                        <i class="fas fa-map-marked-alt"></i>
-                        Mapa
-                    </h2>
-                    <div id="map-selection-banner" class="map-selection-banner">
-                        <span><i class="fas fa-crosshairs"></i> Toca el mapa para elegir la ubicación</span>
-                        <button type="button" id="cancel-map-selection" class="btn btn-small btn-secondary">Cancelar</button>
-                    </div>
-                    <div id="map"></div>
+            <section id="view-map" class="view view-map">
+                <div id="map-selection-banner" class="map-selection-banner">
+                    <span><i class="fas fa-crosshairs"></i> Toca el mapa para elegir la ubicación</span>
+                    <button type="button" id="cancel-map-selection" class="btn btn-small btn-light">Cancelar</button>
                 </div>
-            </div>
+                <div class="map-legend">
+                    <span><i class="legend-dot done"></i> Hecha</span>
+                    <span><i class="legend-dot pending"></i> Pendiente</span>
+                </div>
+                <div id="map"></div>
+            </section>
 
-            <!-- Vista: Añadir Ferrata -->
-            <div id="view-add" class="view">
-                <div class="section">
-                    <h2>
-                        <i class="fas fa-plus-circle"></i>
-                        <span id="form-title">Añadir Nueva Vía Ferrata</span>
-                    </h2>
+            <!-- Vista: Añadir / Editar -->
+            <section id="view-add" class="view">
+                <h1 class="view-title" id="form-title">Nueva vía ferrata</h1>
 
-                    <form id="ferrata-form" name="ferrata-form">
+                <form id="ferrata-form" name="ferrata-form" novalidate>
+                    <fieldset class="card form-card">
+                        <legend><i class="fas fa-info-circle"></i> Información</legend>
+
                         <div class="form-group">
-                            <label for="nombre">
-                                <i class="fas fa-tag"></i> Nombre
-                            </label>
+                            <label for="nombre">Nombre *</label>
                             <input type="text" id="nombre" name="nombre" required placeholder="Ej: Vía Ferrata del Caminito del Rey">
                         </div>
 
                         <div class="form-group">
-                            <label for="ubicacion">
-                                <i class="fas fa-map-marker-alt"></i> Ubicación
-                            </label>
+                            <label for="ubicacion">Zona</label>
                             <input type="text" id="ubicacion" name="ubicacion" placeholder="Ej: Málaga, Andalucía">
                         </div>
 
-                        <div class="form-group">
-                            <label for="nivel">
-                                <i class="fas fa-chart-line"></i> Nivel de Dificultad
-                            </label>
-                            <select id="nivel" name="nivel" required>
-                                <option value="">Selecciona un nivel</option>
-                                <option value="k1">K1 - Fácil</option>
-                                <option value="k2">K2 - Poco difícil</option>
-                                <option value="k3">K3 - Algo difícil</option>
-                                <option value="k4">K4 - Difícil</option>
-                                <option value="k5">K5 - Muy difícil</option>
-                                <option value="k6">K6 - Extremadamente difícil</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="duracion">
-                                <i class="fas fa-clock"></i> Duración (minutos)
-                            </label>
-                            <input type="number" id="duracion" name="duracion" min="1" inputmode="numeric" placeholder="Ej: 120">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="descripcion">
-                                <i class="fas fa-align-left"></i> Descripción
-                            </label>
-                            <textarea id="descripcion" name="descripcion" placeholder="Describe la vía ferrata..."></textarea>
-                            <button type="button" class="btn btn-secondary btn-block" id="generate-description">
-                                <i class="fas fa-magic"></i>
-                                Sugerir descripción
-                            </button>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="equipamiento">
-                                <i class="fas fa-tools"></i> Equipamiento
-                            </label>
-                            <input type="text" id="equipamiento" name="equipamiento" placeholder="Ej: Casco, arnés, cabo de anclaje...">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="observaciones">
-                                <i class="fas fa-exclamation-triangle"></i> Observaciones
-                            </label>
-                            <textarea id="observaciones" name="observaciones" placeholder="Advertencias, recomendaciones especiales..."></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-map-pin"></i> Ubicación en Mapa
-                                <span id="location-status" class="location-status error">
-                                    <i class="fas fa-exclamation-circle"></i> Sin ubicación
-                                </span>
-                            </label>
-                            <div class="location-buttons">
-                                <button type="button" class="btn btn-secondary" id="use-location">
-                                    <i class="fas fa-location-arrow"></i>
-                                    Mi ubicación
-                                </button>
-                                <button type="button" class="btn btn-secondary" id="select-on-map">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    Elegir en mapa
-                                </button>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="nivel">Nivel *</label>
+                                <select id="nivel" name="nivel" required>
+                                    <option value="">Elegir...</option>
+                                    <option value="k1">K1 - Fácil</option>
+                                    <option value="k2">K2 - Poco difícil</option>
+                                    <option value="k3">K3 - Algo difícil</option>
+                                    <option value="k4">K4 - Difícil</option>
+                                    <option value="k5">K5 - Muy difícil</option>
+                                    <option value="k6">K6 - Extremadamente difícil</option>
+                                </select>
                             </div>
-                            <div id="coords-display" class="coords-display" style="display: none;"></div>
+                            <div class="form-group">
+                                <label for="duracion">Duración (min)</label>
+                                <input type="number" id="duracion" name="duracion" min="1" inputmode="numeric" placeholder="120">
+                            </div>
                         </div>
 
                         <div class="form-group">
-                            <label>
-                                <i class="fas fa-photo-video"></i> Fotos y Videos
-                            </label>
-                            <label class="file-upload" id="media-upload" for="media-files">
-                                <i class="fas fa-photo-video" style="font-size: 2em; color: var(--accent-color);"></i>
-                                <p>Añadir fotos o vídeos</p>
-                                <small>Las fotos se reducen automáticamente. La primera foto será la portada.</small>
-                                <input type="file" id="media-files" accept="image/*,video/*" multiple>
-                            </label>
-                            <div id="media-preview" class="preview-images"></div>
-                        </div>
-
-                        <div class="form-buttons">
-                            <button type="submit" id="submit-btn" class="btn btn-primary" style="flex: 1;">
-                                <i class="fas fa-save"></i>
-                                Guardar Vía Ferrata
-                            </button>
-                            <button type="button" id="cancel-edit-btn" class="btn btn-secondary" style="flex: 0 0 auto; display: none;">
-                                <i class="fas fa-times"></i>
-                                Cancelar
+                            <label for="descripcion">Descripción</label>
+                            <textarea id="descripcion" name="descripcion" placeholder="Describe la vía ferrata..."></textarea>
+                            <button type="button" class="btn btn-ghost btn-small" id="generate-description">
+                                <i class="fas fa-magic"></i> Sugerir descripción
                             </button>
                         </div>
-                    </form>
-                </div>
-            </div>
-        </div>
 
-        <!-- Navegación inferior móvil -->
+                        <div class="form-group">
+                            <label for="equipamiento">Equipamiento</label>
+                            <input type="text" id="equipamiento" name="equipamiento" placeholder="Ej: Casco, arnés, disipador...">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="observaciones">Observaciones</label>
+                            <textarea id="observaciones" name="observaciones" placeholder="Advertencias, recomendaciones..."></textarea>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="card form-card">
+                        <legend>
+                            <i class="fas fa-map-pin"></i> Ubicación *
+                            <span id="location-status" class="location-status error">
+                                <i class="fas fa-exclamation-circle"></i> Sin ubicación
+                            </span>
+                        </legend>
+                        <div class="location-buttons">
+                            <button type="button" class="btn btn-outline" id="use-location">
+                                <i class="fas fa-location-arrow"></i> Mi ubicación
+                            </button>
+                            <button type="button" class="btn btn-outline" id="select-on-map">
+                                <i class="fas fa-map-marker-alt"></i> Elegir en mapa
+                            </button>
+                        </div>
+                        <div id="coords-display" class="coords-display" style="display: none;"></div>
+                    </fieldset>
+
+                    <fieldset class="card form-card">
+                        <legend><i class="fas fa-images"></i> Fotos y vídeos</legend>
+                        <label class="file-upload" id="media-upload" for="media-files">
+                            <i class="fas fa-camera"></i>
+                            <span>Añadir fotos o vídeos</span>
+                            <small>La primera foto será la portada</small>
+                            <input type="file" id="media-files" accept="image/*,video/*" multiple>
+                        </label>
+                        <div id="media-preview" class="preview-images"></div>
+                    </fieldset>
+
+                    <div class="form-actions">
+                        <button type="button" id="cancel-edit-btn" class="btn btn-light" style="display: none;">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="submit-btn" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </main>
+
+        <!-- Navegación inferior -->
         <nav class="mobile-nav">
-            <button class="nav-item active" data-view="list">
-                <i class="fas fa-list"></i>
-                <span>Lista</span>
+            <button type="button" class="nav-item active" data-view="list">
+                <i class="fas fa-list-ul"></i>
+                <span>Ferratas</span>
             </button>
-            <button class="nav-item" data-view="map">
-                <i class="fas fa-map"></i>
+            <button type="button" class="nav-item" data-view="map">
+                <i class="fas fa-map-marked-alt"></i>
                 <span>Mapa</span>
             </button>
-            <button class="nav-item" data-view="add">
-                <i class="fas fa-plus-circle"></i>
+            <button type="button" class="nav-item" data-view="add">
+                <i class="fas fa-plus"></i>
                 <span>Añadir</span>
             </button>
         </nav>
     </div>
 
-    <!-- Contenedor de notificaciones -->
+    <!-- Notificaciones -->
     <div id="notification-container" class="notification-container"></div>
 
-    <!-- Modal para ver detalles -->
-    <div id="detail-modal" class="modal">
+    <!-- Ficha de detalle -->
+    <div id="detail-modal" class="modal modal-sheet">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modal-title"></h2>
-                <button type="button" class="modal-close" id="close-modal" aria-label="Cerrar">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body" id="modal-body"></div>
+            <button type="button" class="modal-close floating" id="close-modal" aria-label="Cerrar">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="modal-body"></div>
         </div>
     </div>
 
-    <!-- Modal de ajustes (token GitHub) -->
+    <!-- Registrar ascensión -->
+    <div id="ascension-modal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2 id="ascension-title">Registrar ascensión</h2>
+                <button type="button" class="modal-close" id="close-ascension" aria-label="Cerrar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="ascension-form" class="modal-body" novalidate>
+                <p class="ascension-ferrata" id="ascension-ferrata"></p>
+                <div class="form-group">
+                    <label for="asc-fecha">Fecha *</label>
+                    <input type="date" id="asc-fecha" name="fecha" required>
+                </div>
+                <div class="form-group">
+                    <label>Valoración</label>
+                    <div class="star-input" id="asc-stars" role="radiogroup" aria-label="Valoración">
+                        <button type="button" data-value="1" aria-label="1 estrella"><i class="fas fa-star"></i></button>
+                        <button type="button" data-value="2" aria-label="2 estrellas"><i class="fas fa-star"></i></button>
+                        <button type="button" data-value="3" aria-label="3 estrellas"><i class="fas fa-star"></i></button>
+                        <button type="button" data-value="4" aria-label="4 estrellas"><i class="fas fa-star"></i></button>
+                        <button type="button" data-value="5" aria-label="5 estrellas"><i class="fas fa-star"></i></button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="asc-companeros">Compañeros</label>
+                    <input type="text" id="asc-companeros" name="companeros" placeholder="Ej: Ana, Luis">
+                </div>
+                <div class="form-group">
+                    <label for="asc-notas">Notas</label>
+                    <textarea id="asc-notas" name="notas" placeholder="Cómo fue, condiciones, tiempo empleado..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-light" id="cancel-ascension">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="save-ascension-btn">
+                        <i class="fas fa-check"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ajustes (token GitHub) -->
     <div id="settings-modal" class="modal">
         <div class="modal-content modal-small">
             <div class="modal-header">
@@ -263,12 +288,12 @@
                         <label for="token-input">Token</label>
                         <input type="password" id="token-input" autocomplete="off" spellcheck="false">
                     </div>
-                    <div class="form-buttons">
-                        <button type="submit" id="save-token-btn" class="btn btn-primary" style="flex: 1;">
-                            <i class="fas fa-check"></i> Verificar y guardar
-                        </button>
-                        <button type="button" id="remove-token-btn" class="btn btn-accent">
+                    <div class="form-actions">
+                        <button type="button" id="remove-token-btn" class="btn btn-danger">
                             <i class="fas fa-trash"></i> Quitar
+                        </button>
+                        <button type="submit" id="save-token-btn" class="btn btn-primary">
+                            <i class="fas fa-check"></i> Verificar y guardar
                         </button>
                     </div>
                 </form>
@@ -279,13 +304,14 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
+
     <!-- Módulos JavaScript -->
     <script src="./src/js/config.js"></script>
     <script src="./src/js/notifications.js"></script>
     <script src="./src/js/github.js"></script>
     <script src="./src/js/map.js"></script>
     <script src="./src/components/ferratas.js"></script>
+    <script src="./src/components/ascensiones.js"></script>
     <script src="./src/js/ui.js"></script>
     <script src="./src/js/main.js"></script>
 </body>

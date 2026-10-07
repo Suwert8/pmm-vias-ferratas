@@ -1,5 +1,5 @@
 // Service worker: red primero y copia en caché para funcionar sin conexión
-const CACHE_NAME = 'vias-ferratas-v2.0.0';
+const CACHE_NAME = 'vias-ferratas-v2.1.0';
 const APP_SHELL = [
     './',
     './index.html',
@@ -11,6 +11,7 @@ const APP_SHELL = [
     './src/js/github.js',
     './src/js/map.js',
     './src/components/ferratas.js',
+    './src/components/ascensiones.js',
     './src/js/ui.js',
     './src/js/main.js',
     './icons/icon-192.png',

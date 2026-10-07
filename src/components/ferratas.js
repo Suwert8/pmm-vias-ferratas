@@ -43,22 +43,43 @@ function getVisibleFerratas() {
     const search = state.search.trim().toLocaleLowerCase('es');
     return state.ferratas
         .filter(f => state.filter === 'todas' || f.nivel === state.filter)
+        .filter(f => state.estado === 'todas' || (state.estado === 'hechas') === isDone(f))
         .filter(f => !search || `${f.nombre} ${f.ubicacion || ''}`.toLocaleLowerCase('es').includes(search))
         .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' }));
 }
 
 // ===== LISTADO =====
+function renderStats() {
+    const done = state.ferratas.filter(isDone).length;
+    const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    };
+    setText('stat-total', state.ferratas.length);
+    setText('stat-done', done);
+    setText('stat-pending', state.ferratas.length - done);
+
+    document.querySelectorAll('#stats .stat').forEach(stat => {
+        stat.classList.toggle('active', stat.dataset.estado === state.estado);
+    });
+    document.querySelectorAll('#nivel-chips .chip').forEach(chip => {
+        chip.classList.toggle('active', chip.dataset.nivel === state.filter);
+    });
+}
+
 function renderFerratas() {
     const container = document.getElementById('ferratas-list');
     const counter = document.getElementById('ferratas-count');
     if (!container) return;
 
     const visible = getVisibleFerratas();
+    renderStats();
     renderMarkers(visible);
 
+    const filtering = state.filter !== 'todas' || state.estado !== 'todas' || state.search.trim();
     if (counter) {
-        counter.textContent = state.ferratas.length
-            ? `${visible.length} de ${state.ferratas.length}`
+        counter.textContent = filtering && state.ferratas.length
+            ? `${visible.length} de ${state.ferratas.length} ferratas`
             : '';
     }
 
@@ -66,8 +87,9 @@ function renderFerratas() {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-mountain"></i>
-                <h3>No hay vías ferratas</h3>
-                <p>Añade tu primera vía ferrata desde la pestaña "Añadir"</p>
+                <h3>Aún no hay vías ferratas</h3>
+                <p>Añade la primera desde la pestaña "Añadir"</p>
+                <button type="button" class="btn btn-primary" data-action="go-add"><i class="fas fa-plus"></i> Añadir ferrata</button>
             </div>
         `;
         return;
@@ -78,7 +100,8 @@ function renderFerratas() {
             <div class="empty-state">
                 <i class="fas fa-filter"></i>
                 <h3>Ninguna ferrata coincide</h3>
-                <p>Prueba con otro nivel o con otra búsqueda</p>
+                <p>Prueba con otro nivel, estado o búsqueda</p>
+                <button type="button" class="btn btn-light" data-action="clear-filters">Quitar filtros</button>
             </div>
         `;
         return;
@@ -86,39 +109,48 @@ function renderFerratas() {
 
     container.innerHTML = visible.map(ferrata => {
         const cover = getCoverPath(ferrata);
-        const id = escapeHtml(ferrata.id);
+        const done = isDone(ferrata);
+        const last = lastAscension(ferrata);
+        const rating = averageRating(ferrata);
+        const count = (ferrata.ascensiones || []).length;
         return `
-        <div class="ferrata-card" data-action="detail" data-id="${id}">
-            <div class="ferrata-header">
+        <article class="ferrata-card" data-action="detail" data-id="${escapeHtml(ferrata.id)}">
+            <div class="ferrata-thumb">
                 ${cover
-                    ? `<img src="${escapeHtml(mediaUrl(cover))}" alt="${escapeHtml(ferrata.nombre)}" loading="lazy" data-fallback>`
-                    : '<div class="no-image">🏔️</div>'}
-                <div class="ferrata-level level-${escapeHtml(ferrata.nivel)}">${escapeHtml(getNivelText(ferrata.nivel))}</div>
+                    ? `<img src="${escapeHtml(mediaUrl(cover))}" alt="" loading="lazy" data-fallback>`
+                    : '<div class="no-image"><i class="fas fa-mountain"></i></div>'}
+                ${done ? '<span class="done-badge" title="Hecha"><i class="fas fa-check"></i></span>' : ''}
             </div>
             <div class="ferrata-body">
                 <h3 class="ferrata-title">${escapeHtml(ferrata.nombre)}</h3>
-                <div class="ferrata-info">
-                    ${ferrata.duracion ? `<span><i class="fas fa-clock"></i> ${escapeHtml(formatDuration(ferrata.duracion))}</span>` : ''}
-                    ${ferrata.ubicacion ? `<span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(ferrata.ubicacion)}</span>` : ''}
-                </div>
-                <div class="ferrata-actions">
-                    <button type="button" class="btn btn-small btn-secondary" data-action="edit" data-id="${id}">
-                        <i class="fas fa-edit"></i> Editar
-                    </button>
-                    <button type="button" class="btn btn-small btn-accent" data-action="delete" data-id="${id}">
-                        <i class="fas fa-trash"></i> Eliminar
-                    </button>
+                ${ferrata.ubicacion ? `<div class="ferrata-location"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(ferrata.ubicacion)}</div>` : ''}
+                ${rating > 0 ? renderStars(rating) : ''}
+                <div class="ferrata-meta">
+                    <span class="tag level-tag level-${escapeHtml(ferrata.nivel)}">${escapeHtml((ferrata.nivel || '').toUpperCase())}</span>
+                    ${ferrata.duracion ? `<span class="tag"><i class="far fa-clock"></i> ${escapeHtml(formatDuration(ferrata.duracion))}</span>` : ''}
+                    ${done
+                        ? `<span class="tag tag-done"><i class="fas fa-check"></i> ${count > 1 ? `${count} veces` : escapeHtml(formatDate(last.fecha))}</span>`
+                        : '<span class="tag tag-pending">Pendiente</span>'}
                 </div>
             </div>
-        </div>`;
+        </article>`;
     }).join('');
 
     // Si una imagen no carga, mostrar el icono por defecto
     container.querySelectorAll('img[data-fallback]').forEach(img => {
         img.addEventListener('error', () => {
-            img.outerHTML = '<div class="no-image">🏔️</div>';
+            img.outerHTML = '<div class="no-image"><i class="fas fa-mountain"></i></div>';
         }, { once: true });
     });
+}
+
+function clearFilters() {
+    state.filter = 'todas';
+    state.estado = 'todas';
+    state.search = '';
+    const search = document.getElementById('search-input');
+    if (search) search.value = '';
+    renderFerratas();
 }
 
 // ===== DETALLE =====
@@ -130,72 +162,90 @@ function showFerrataDetail(id) {
     }
 
     const modal = document.getElementById('detail-modal');
-    const title = document.getElementById('modal-title');
     const body = document.getElementById('modal-body');
-    if (!modal || !title || !body) return;
+    if (!modal || !body) return;
 
+    const safeId = escapeHtml(ferrata.id);
     const media = ferrata.media || [];
     const cover = getCoverPath(ferrata);
+    const done = isDone(ferrata);
+    const rating = averageRating(ferrata);
     const hasCoords = Number.isFinite(ferrata.lat) && Number.isFinite(ferrata.lng);
     const directions = hasCoords
         ? `https://www.google.com/maps/dir/?api=1&destination=${ferrata.lat},${ferrata.lng}`
         : '';
-    const textBlock = (icon, label, value, extraClass = '') => value ? `
-        <div class="detail-block ${extraClass}">
-            <strong><i class="fas ${icon}"></i> ${label}:</strong>
+    const textSection = (icon, label, value, extraClass = '') => value ? `
+        <div class="detail-section ${extraClass}">
+            <h3><span><i class="fas ${icon}"></i> ${label}</span></h3>
             <p>${escapeHtml(value)}</p>
         </div>` : '';
 
-    title.textContent = ferrata.nombre;
     body.innerHTML = `
-        <div class="ferrata-level level-${escapeHtml(ferrata.nivel)} detail-level">
-            ${escapeHtml(getNivelText(ferrata.nivel))}
-        </div>
-
-        ${cover ? `<img class="detail-cover" src="${escapeHtml(mediaUrl(cover))}" alt="${escapeHtml(ferrata.nombre)}">` : ''}
-
-        <div class="detail-grid">
-            ${ferrata.duracion ? `<div><strong><i class="fas fa-clock"></i> Duración:</strong><br>${escapeHtml(formatDuration(ferrata.duracion))}</div>` : ''}
-            ${ferrata.ubicacion ? `<div><strong><i class="fas fa-map-marker-alt"></i> Ubicación:</strong><br>${escapeHtml(ferrata.ubicacion)}</div>` : ''}
-            ${hasCoords ? `<div><strong><i class="fas fa-crosshairs"></i> Coordenadas:</strong><br>${ferrata.lat.toFixed(5)}, ${ferrata.lng.toFixed(5)}</div>` : ''}
-        </div>
-
-        ${textBlock('fa-align-left', 'Descripción', ferrata.descripcion)}
-        ${textBlock('fa-tools', 'Equipamiento', ferrata.equipamiento)}
-        ${textBlock('fa-exclamation-triangle', 'Observaciones', ferrata.observaciones, 'warning-text')}
-
-        ${media.length > 0 ? `
-            <div class="detail-block">
-                <strong><i class="fas fa-images"></i> Galería (${media.length}):</strong>
-                <div class="media-gallery">
-                    ${media.map(item => {
-                        const url = escapeHtml(mediaUrl(item.path));
-                        return item.type === 'video'
-                            ? `<div class="media-item"><video src="${url}" controls preload="metadata" playsinline></video></div>`
-                            : `<a class="media-item" href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="Foto de ${escapeHtml(ferrata.nombre)}" loading="lazy"></a>`;
-                    }).join('')}
-                </div>
+        <div class="detail-hero">
+            ${cover
+                ? `<img src="${escapeHtml(mediaUrl(cover))}" alt="">`
+                : '<div class="detail-hero-icon"><i class="fas fa-mountain"></i></div>'}
+            <div class="detail-hero-text">
+                <h2 id="modal-title">${escapeHtml(ferrata.nombre)}</h2>
+                ${ferrata.ubicacion ? `<p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(ferrata.ubicacion)}</p>` : ''}
             </div>
-        ` : ''}
+        </div>
 
-        <div class="detail-actions">
-            ${hasCoords ? `
-                <a class="btn btn-primary" href="${directions}" target="_blank" rel="noopener">
-                    <i class="fas fa-route"></i> Cómo llegar
-                </a>
-                <button type="button" class="btn btn-secondary" data-action="focus-map" data-id="${escapeHtml(ferrata.id)}">
-                    <i class="fas fa-map"></i> Ver en mapa
-                </button>` : ''}
-            <button type="button" class="btn btn-secondary" data-action="edit" data-id="${escapeHtml(ferrata.id)}">
-                <i class="fas fa-edit"></i> Editar
-            </button>
-            <button type="button" class="btn btn-accent" data-action="delete" data-id="${escapeHtml(ferrata.id)}">
-                <i class="fas fa-trash"></i> Eliminar
-            </button>
+        <div class="detail-body">
+            <div class="detail-tags">
+                <span class="tag level-tag level-${escapeHtml(ferrata.nivel)}">${escapeHtml(getNivelText(ferrata.nivel))}</span>
+                ${ferrata.duracion ? `<span class="tag"><i class="far fa-clock"></i> ${escapeHtml(formatDuration(ferrata.duracion))}</span>` : ''}
+                ${done ? '<span class="tag tag-done"><i class="fas fa-check"></i> Hecha</span>' : '<span class="tag tag-pending">Pendiente</span>'}
+                ${rating > 0 ? `<span class="tag">${renderStars(rating)}</span>` : ''}
+            </div>
+
+            <div class="detail-quick-actions">
+                ${hasCoords ? `
+                    <a class="quick-action" href="${directions}" target="_blank" rel="noopener">
+                        <i class="fas fa-route"></i> Cómo llegar
+                    </a>
+                    <button type="button" class="quick-action" data-action="focus-map" data-id="${safeId}">
+                        <i class="fas fa-map"></i> Ver en mapa
+                    </button>` : ''}
+                <button type="button" class="quick-action" data-action="add-ascension" data-id="${safeId}">
+                    <i class="fas fa-flag-checkered"></i> ¡La he hecho!
+                </button>
+            </div>
+
+            ${textSection('fa-align-left', 'Descripción', ferrata.descripcion)}
+            ${textSection('fa-tools', 'Equipamiento', ferrata.equipamiento)}
+            ${textSection('fa-exclamation-triangle', 'Observaciones', ferrata.observaciones, 'warning-text')}
+
+            ${renderAscensionesSection(ferrata)}
+
+            ${media.length > 0 ? `
+                <div class="detail-section">
+                    <h3><span><i class="fas fa-images"></i> Galería (${media.length})</span></h3>
+                    <div class="media-gallery">
+                        ${media.map(item => {
+                            const url = escapeHtml(mediaUrl(item.path));
+                            return item.type === 'video'
+                                ? `<div class="media-item"><video src="${url}" controls preload="metadata" playsinline></video></div>`
+                                : `<a class="media-item" href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="Foto de ${escapeHtml(ferrata.nombre)}" loading="lazy"></a>`;
+                        }).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            <div class="detail-footer">
+                <button type="button" class="btn btn-light" data-action="edit" data-id="${safeId}">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+                <button type="button" class="btn btn-danger" data-action="delete" data-id="${safeId}">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </div>
         </div>
     `;
 
+    const wasOpen = modal.classList.contains('active');
     modal.classList.add('active');
+    if (!wasOpen) modal.scrollTop = 0;
     document.body.style.overflow = 'hidden';
 }
 
